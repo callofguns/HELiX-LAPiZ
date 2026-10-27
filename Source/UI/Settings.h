@@ -30,7 +30,7 @@ namespace Settings
         file.saveIfNeeded();
     }
 
-    // The tab that was open last ("simple", "waves" or "advanced"), so LAPiZ reopens where you left off.
+    // The tab that was open last ("simple", "waves", "advanced" or "effects"), so LAPiZ reopens where you left off.
     inline juce::String loadPage()
     {
         juce::PropertiesFile file (fileOptions());

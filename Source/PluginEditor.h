@@ -4,7 +4,9 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PluginProcessor.h"
 #include "UI/AdvancedPage.h"
+#include "UI/EffectsPage.h"
 #include "UI/LapizLookAndFeel.h"
+#include "UI/PresetBar.h"
 #include "UI/SimplePage.h"
 #include "UI/WavesPage.h"
 
@@ -24,7 +26,7 @@ public:
 
 private:
     void registerHelp (juce::Component& component, const juce::String& text);
-    enum class Page { simple, waves, advanced };
+    enum class Page { simple, waves, advanced, effects };
     void showPage (Page page);
     void setHelpText (const juce::String& text);
     void showSettingsMenu();
@@ -44,11 +46,13 @@ private:
     juce::Component* helpOwner = nullptr;
     juce::String helpText;
 
-    juce::TextButton simpleTab { "Simple" }, wavesTab { "Waves" }, advancedTab { "Advanced" };
+    juce::TextButton simpleTab { "Simple" }, wavesTab { "Waves" }, advancedTab { "Advanced" }, effectsTab { "Effects" };
+    PresetBar presetBar;
     SettingsButton settingsButton;
     SimplePage simplePage;
     WavesPage wavesPage;
     AdvancedPage advancedPage;
+    EffectsPage effectsPage;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LapizAudioProcessorEditor)
 };

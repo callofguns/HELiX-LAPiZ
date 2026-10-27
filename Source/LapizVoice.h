@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <cstdint>
 #include <juce_audio_basics/juce_audio_basics.h>
@@ -41,16 +42,24 @@ struct VoiceParams
     std::atomic<float>* lfoRetrigger = nullptr;
     const Lfo::Clock* lfoClock = nullptr;
 
+    // Unison
+    std::atomic<float>* unisonVoices = nullptr;
+    std::atomic<float>* unisonDetune = nullptr;
+    std::atomic<float>* unisonWidth  = nullptr;
+
     // The wavetable to play during the current block (set by the processor before each block).
     const Wavetable* const* table = nullptr;
 };
 
 // One voice plays one note. The synth owns several, so chords can play.
-// Signal path: wavetable oscillator -> filter -> volume envelope.
+// Signal path: wavetable oscillator (with up to 8 unison copies) -> filter -> volume envelope.
 // The filter envelope and the LFO move the controls while the note plays.
 class LapizVoice : public juce::SynthesiserVoice
 {
 public:
+    static constexpr int maxUnison = 8;
+    static constexpr float maxDetuneCents = 50.0f; // how far the outermost copies go at full Detune
+
     explicit LapizVoice (const VoiceParams& p) : params (p) {}
 
     bool canPlaySound (juce::SynthesiserSound* sound) override
@@ -64,7 +73,7 @@ public:
 
         if (newRate > 0.0)
         {
-            filter.prepare ({ newRate, 512u, 1u });
+            filter.prepare ({ newRate, 512u, 2u }); // left and right, for unison copies spread across the stereo field
             cutoffSmoother.reset (newRate, 0.02); // 20 ms glide so moving the knob doesn't crackle
         }
     }
@@ -72,15 +81,19 @@ public:
     void startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound*, int) override
     {
         noteFrequency = juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber);
-        phaseIncrement = (float) (noteFrequency / getSampleRate());
-        noteTableLevel = Wavetable::levelForFrequency (noteFrequency, getSampleRate()); // keeps harmonics below Nyquist
-        phase = 0.0f;
         level = velocity;
 
         // A restarted LFO begins at the start of its cycle, with its own random steps.
         noteLfoCycles = 0.0;
         randomSeed = ++noteCounter;
         startOrder = ++startCounter;
+
+        // The first copy starts at the beginning of the wave. The other unison copies start at
+        // random points, so they don't all line up and sound like one loud copy at the start.
+        juce::Random random ((juce::int64) randomSeed);
+        phases[0] = 0.0f;
+        for (int k = 1; k < maxUnison; ++k)
+            phases[(size_t) k] = random.nextFloat();
 
         adsr.setSampleRate (getSampleRate());
         filterEnvelope.setSampleRate (getSampleRate());
@@ -127,6 +140,29 @@ public:
         const float lfoAmount = params.lfoAmount->load();
         const bool restartLfo = params.lfoRetrigger->load() > 0.5f;
         const auto& clock = *params.lfoClock;
+        const double sampleRate = getSampleRate();
+
+        // Unison: each copy is detuned and panned by its place in the spread (-1 = far left and flat,
+        // +1 = far right and sharp). Equal-power panning keeps a centred copy at full level.
+        const int copies = juce::jlimit (1, maxUnison, juce::roundToInt (params.unisonVoices->load()));
+        const float detuneCents = params.unisonDetune->load() * maxDetuneCents;
+        const float width = params.unisonWidth->load();
+        const float copiesGain = 1.0f / std::sqrt ((float) copies);
+
+        std::array<float, maxUnison> ratio {}, panLeft {}, panRight {};
+        for (int k = 0; k < copies; ++k)
+        {
+            const float spread = copies > 1 ? 2.0f * (float) k / (float) (copies - 1) - 1.0f : 0.0f;
+            ratio[(size_t) k] = std::exp2 (spread * detuneCents / 1200.0f);
+            const float angle = (spread * width + 1.0f) * juce::MathConstants<float>::pi * 0.25f;
+            panLeft[(size_t) k]  = std::cos (angle) * juce::MathConstants<float>::sqrt2 * copiesGain;
+            panRight[(size_t) k] = std::sin (angle) * juce::MathConstants<float>::sqrt2 * copiesGain;
+        }
+
+        // The sharpest copy decides how many harmonics are safe, so none of them alias.
+        const double highestRatio = copies > 1 ? std::exp2 ((double) detuneCents / 1200.0) : 1.0;
+        const int noteTableLevel = Wavetable::levelForFrequency (noteFrequency * highestRatio, sampleRate);
+        const float phaseIncrement = (float) (noteFrequency / sampleRate);
 
         for (int i = 0; i < numSamples; ++i)
         {
@@ -161,23 +197,40 @@ public:
             {
                 // A higher pitch needs fewer harmonics, so the band-limited level is chosen again.
                 const double frequency = noteFrequency * std::exp2 ((double) (lfo * Lfo::pitchSemitones) / 12.0);
-                increment = (float) (frequency / getSampleRate());
-                tableLevel = Wavetable::levelForFrequency (frequency, getSampleRate());
+                increment = (float) (frequency / sampleRate);
+                tableLevel = Wavetable::levelForFrequency (frequency * highestRatio, sampleRate);
             }
 
             float gain = level * 0.3f;
             if (lfoTarget == Lfo::volume)
                 gain *= 1.0f - 0.5f * (lfoAmount - lfo); // dips down from full volume, never above it
 
-            const float raw = wavetable.getSample (phase, currentPosition, tableLevel) * gain;
-            const float sample = filter.processSample (0, raw) * filterGain * adsr.getNextSample();
+            float left = 0.0f, right = 0.0f;
+            for (int k = 0; k < copies; ++k)
+            {
+                auto& phase = phases[(size_t) k];
+                const float wave = wavetable.getSample (phase, currentPosition, tableLevel);
+                left  += wave * panLeft[(size_t) k];
+                right += wave * panRight[(size_t) k];
 
-            for (int channel = 0; channel < output.getNumChannels(); ++channel)
-                output.addSample (channel, startSample + i, sample);
+                phase += increment * ratio[(size_t) k];
+                if (phase >= 1.0f)
+                    phase -= 1.0f;
+            }
 
-            phase += increment;
-            if (phase >= 1.0f)
-                phase -= 1.0f;
+            const float envelope = adsr.getNextSample() * filterGain * gain;
+            left = filter.processSample (0, left) * envelope;
+            right = copies > 1 ? filter.processSample (1, right) * envelope : left; // one copy is centred: both sides match
+
+            if (output.getNumChannels() >= 2)
+            {
+                output.addSample (0, startSample + i, left);
+                output.addSample (1, startSample + i, right);
+            }
+            else
+            {
+                output.addSample (0, startSample + i, 0.5f * (left + right));
+            }
 
             if (! adsr.isActive())
             {
@@ -234,9 +287,7 @@ private:
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Multiplicative> cutoffSmoother { 20000.0f };
 
     double noteFrequency = 440.0;
-    int noteTableLevel = 1;
-    float phase = 0.0f;
-    float phaseIncrement = 0.0f;
+    std::array<float, maxUnison> phases {}; // one per unison copy
     float level = 0.0f;
     float filterGain = 1.0f;
 

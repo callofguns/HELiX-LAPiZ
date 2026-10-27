@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "FactoryPresets.h"
 #include "FactoryTables.h"
 #include "WavetableFile.h"
 
@@ -30,10 +31,19 @@ LapizAudioProcessor::LapizAudioProcessor()
     voiceParams.lfoAmount    = parameters.getRawParameterValue ("lfoAmount");
     voiceParams.lfoRetrigger = parameters.getRawParameterValue ("lfoRetrigger");
     voiceParams.lfoClock = &lfoClock;
+    voiceParams.unisonVoices = parameters.getRawParameterValue ("unisonVoices");
+    voiceParams.unisonDetune = parameters.getRawParameterValue ("unisonDetune");
+    voiceParams.unisonWidth  = parameters.getRawParameterValue ("unisonWidth");
     voiceParams.table = &blockTable;
 
     for (int i = 0; i < numVoices; ++i)
         synth.addVoice (new LapizVoice (voiceParams));
+
+    auto raw = [this] (const char* id) { return parameters.getRawParameterValue (id); };
+    effectParams = { raw ("distOn"), raw ("distDrive"), raw ("distTone"), raw ("distMix"),
+                     raw ("chorusOn"), raw ("chorusRate"), raw ("chorusDepth"), raw ("chorusMix"),
+                     raw ("delayOn"), raw ("delayDivision"), raw ("delayFeedback"), raw ("delayMix"),
+                     raw ("reverbOn"), raw ("reverbSize"), raw ("reverbDamping"), raw ("reverbMix") };
 
     synth.addSound (new LapizSound());
 }
@@ -101,12 +111,49 @@ juce::AudioProcessorValueTreeState::ParameterLayout LapizAudioProcessor::createP
                                                               divisions, Lfo::defaultDivision));
     layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { "lfoRetrigger", 1 }, "LFO Restart On Note", false));
 
+    // Unison. One copy by default, so the sound only thickens once you add copies.
+    layout.add (std::make_unique<juce::AudioParameterInt> (juce::ParameterID { "unisonVoices", 1 }, "Unison Voices",
+                                                           1, LapizVoice::maxUnison, 1));
+    layout.add (std::make_unique<Param> (juce::ParameterID { "unisonDetune", 1 }, "Unison Detune", Range (0.0f, 1.0f), 0.25f));
+    layout.add (std::make_unique<Param> (juce::ParameterID { "unisonWidth", 1 }, "Unison Width", Range (0.0f, 1.0f), 0.8f));
+
+    // Effects. All off by default.
+    auto onSwitch = [&layout] (const char* id, const char* name)
+    {
+        layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID { id, 1 }, name, false));
+    };
+
+    onSwitch ("distOn", "Distortion On");
+    layout.add (std::make_unique<Param> (juce::ParameterID { "distDrive", 1 }, "Distortion Drive", Range (0.0f, 1.0f), 0.4f));
+    layout.add (std::make_unique<Param> (juce::ParameterID { "distTone", 1 }, "Distortion Tone", Range (0.0f, 1.0f), 0.7f));
+    layout.add (std::make_unique<Param> (juce::ParameterID { "distMix", 1 }, "Distortion Mix", Range (0.0f, 1.0f), 1.0f));
+
+    onSwitch ("chorusOn", "Chorus On");
+    Range chorusRateRange (0.05f, 5.0f);
+    chorusRateRange.setSkewForCentre (0.8f);
+    layout.add (std::make_unique<Param> (juce::ParameterID { "chorusRate", 1 }, "Chorus Rate", chorusRateRange, 0.8f));
+    layout.add (std::make_unique<Param> (juce::ParameterID { "chorusDepth", 1 }, "Chorus Depth", Range (0.0f, 1.0f), 0.4f));
+    layout.add (std::make_unique<Param> (juce::ParameterID { "chorusMix", 1 }, "Chorus Mix", Range (0.0f, 1.0f), 0.5f));
+
+    onSwitch ("delayOn", "Delay On");
+    layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "delayDivision", 1 }, "Delay Time",
+                                                              divisions, Effects::defaultDelayDivision));
+    layout.add (std::make_unique<Param> (juce::ParameterID { "delayFeedback", 1 }, "Delay Feedback", Range (0.0f, 0.9f), 0.35f));
+    layout.add (std::make_unique<Param> (juce::ParameterID { "delayMix", 1 }, "Delay Mix", Range (0.0f, 1.0f), 0.3f));
+
+    onSwitch ("reverbOn", "Reverb On");
+    layout.add (std::make_unique<Param> (juce::ParameterID { "reverbSize", 1 }, "Reverb Size", Range (0.0f, 1.0f), 0.6f));
+    layout.add (std::make_unique<Param> (juce::ParameterID { "reverbDamping", 1 }, "Reverb Damping", Range (0.0f, 1.0f), 0.5f));
+    layout.add (std::make_unique<Param> (juce::ParameterID { "reverbMix", 1 }, "Reverb Mix", Range (0.0f, 1.0f), 0.3f));
+
     return layout;
 }
 
-void LapizAudioProcessor::prepareToPlay (double sampleRate, int)
+void LapizAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     synth.setCurrentPlaybackSampleRate (sampleRate);
+    effects.prepare (sampleRate, samplesPerBlock);
+    setLatencySamples (effects.getLatencySamples());
 }
 
 // Sets the shared LFO's speed and position for the coming block.
@@ -117,20 +164,21 @@ void LapizAudioProcessor::advanceLfoClock (int numSamples)
     const double sampleRate = getSampleRate() > 0.0 ? getSampleRate() : 44100.0;
     double cyclesPerSample = 0.0;
 
+    // The song's tempo (120 BPM when there is no host, as in the standalone app). The delay uses it too.
+    bpm = 120.0;
+    juce::Optional<double> songPosition;
+
+    if (auto* host = getPlayHead())
+        if (auto position = host->getPosition())
+        {
+            if (auto hostBpm = position->getBpm())
+                bpm = *hostBpm;
+            if (position->getIsPlaying())
+                songPosition = position->getPpqPosition();
+        }
+
     if (parameters.getRawParameterValue ("lfoSync")->load() > 0.5f)
     {
-        double bpm = 120.0;
-        juce::Optional<double> songPosition;
-
-        if (auto* host = getPlayHead())
-            if (auto position = host->getPosition())
-            {
-                if (auto hostBpm = position->getBpm())
-                    bpm = *hostBpm;
-                if (position->getIsPlaying())
-                    songPosition = position->getPpqPosition();
-            }
-
         const int division = juce::jlimit (0, (int) Lfo::divisions.size() - 1,
                                            (int) parameters.getRawParameterValue ("lfoDivision")->load());
         const double beatsPerCycle = Lfo::divisions[(size_t) division].beats;
@@ -183,6 +231,7 @@ void LapizAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     advanceLfoClock (buffer.getNumSamples());
     synth.renderNextBlock (buffer, midi, 0, buffer.getNumSamples());
     publishLiveState();
+    effects.process (buffer, effectParams, bpm);
     buffer.applyGain (parameters.getRawParameterValue ("volume")->load());
 
     inBlock.store (false);
@@ -293,10 +342,29 @@ juce::AudioProcessorEditor* LapizAudioProcessor::createEditor()
 
 // The knobs are saved by the parameter tree. The wavetable is saved alongside it:
 // built-in and file tables by name or path, drawn tables with the drawings themselves.
+// Projects and preset files hold exactly the same thing.
 void LapizAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+{
+    if (auto xml = createStateXml())
+        copyXmlToBinary (*xml, destData);
+}
+
+void LapizAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+{
+    if (auto xml = getXmlFromBinary (data, sizeInBytes))
+        applyStateXml (*xml);
+}
+
+std::unique_ptr<juce::XmlElement> LapizAudioProcessor::createStateXml()
 {
     auto state = parameters.copyState();
     state.removeChild (state.getChildWithName ("Wavetable"), nullptr);
+
+    {
+        const juce::ScopedLock lock (tableLock);
+        state.setProperty ("presetName", presetName, nullptr);
+        state.setProperty ("presetPath", presetFile.getFullPathName(), nullptr);
+    }
 
     const auto choice = getTableChoice();
     const auto currentTable = getTable();
@@ -333,21 +401,37 @@ void LapizAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
             break;
     }
     state.appendChild (tableTree, nullptr);
-
-    if (auto xml = state.createXml())
-        copyXmlToBinary (*xml, destData);
+    return state.createXml();
 }
 
-void LapizAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+bool LapizAudioProcessor::applyStateXml (const juce::XmlElement& xml)
 {
-    auto xml = getXmlFromBinary (data, sizeInBytes);
-    if (xml == nullptr || ! xml->hasTagName (parameters.state.getType()))
-        return;
+    if (! xml.hasTagName (parameters.state.getType()))
+        return false;
 
-    auto state = juce::ValueTree::fromXml (*xml);
+    auto state = juce::ValueTree::fromXml (xml);
     const auto tableTree = state.getChildWithName ("Wavetable");
     state.removeChild (tableTree, nullptr);
+
+    {
+        const juce::ScopedLock lock (tableLock);
+        presetName = state.getProperty ("presetName", "Init").toString();
+        presetFile = juce::File (state.getProperty ("presetPath").toString());
+    }
+
+    // Controls added in later versions are missing from older projects: those start at their defaults.
+    for (auto* param : getParameters())
+        if (auto* withID = dynamic_cast<juce::RangedAudioParameter*> (param))
+            withID->setValueNotifyingHost (withID->getDefaultValue());
+
     parameters.replaceState (state);
+    applyTableTree (tableTree);
+    sendChangeMessage();
+    return true;
+}
+
+void LapizAudioProcessor::applyTableTree (const juce::ValueTree& tableTree)
+{
 
     if (! tableTree.isValid())
     {
@@ -407,6 +491,84 @@ void LapizAudioProcessor::setStateInformation (const void* data, int sizeInBytes
     }
 
     selectFactoryTable (0); // nothing usable was saved
+}
+
+//==============================================================================
+// Presets
+
+juce::File LapizAudioProcessor::presetFolder()
+{
+    return juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile ("LAPiZ").getChildFile ("Presets");
+}
+
+juce::Array<juce::File> LapizAudioProcessor::listUserPresets()
+{
+    auto files = presetFolder().findChildFiles (juce::File::findFiles, false, juce::String ("*") + presetExtension);
+    files.sort();
+    return files;
+}
+
+juce::String LapizAudioProcessor::getPresetName() const
+{
+    const juce::ScopedLock lock (tableLock);
+    return presetName;
+}
+
+juce::File LapizAudioProcessor::getPresetFile() const
+{
+    const juce::ScopedLock lock (tableLock);
+    return presetFile;
+}
+
+void LapizAudioProcessor::loadFactoryPreset (int index)
+{
+    const auto& presets = FactoryPresets::list();
+    const auto& preset = presets[(size_t) juce::jlimit (0, (int) presets.size() - 1, index)];
+
+    // Every control goes back to its default first, so nothing is left over from the last sound.
+    for (auto* param : getParameters())
+        if (auto* ranged = dynamic_cast<juce::RangedAudioParameter*> (param))
+            ranged->setValueNotifyingHost (ranged->getDefaultValue());
+
+    for (auto& [id, value] : preset.settings)
+        if (auto* param = parameters.getParameter (id))
+            param->setValueNotifyingHost (param->convertTo0to1 (value));
+
+    {
+        const juce::ScopedLock lock (tableLock);
+        presetName = preset.name;
+        presetFile = juce::File();
+    }
+    selectFactoryTable (preset.table); // also tells the interface to refresh
+}
+
+bool LapizAudioProcessor::loadPresetFile (const juce::File& file)
+{
+    auto xml = juce::XmlDocument::parse (file);
+    if (xml == nullptr || ! applyStateXml (*xml))
+        return false;
+
+    {
+        const juce::ScopedLock lock (tableLock);
+        presetName = file.getFileNameWithoutExtension();
+        presetFile = file;
+    }
+    sendChangeMessage();
+    return true;
+}
+
+bool LapizAudioProcessor::savePresetFile (const juce::File& file)
+{
+    {
+        const juce::ScopedLock lock (tableLock);
+        presetName = file.getFileNameWithoutExtension();
+        presetFile = file;
+    }
+
+    auto xml = createStateXml();
+    const bool saved = xml != nullptr && file.getParentDirectory().createDirectory() && xml->writeTo (file);
+    sendChangeMessage();
+    return saved;
 }
 
 // This creates the plugin when the host (FL Studio) loads it.

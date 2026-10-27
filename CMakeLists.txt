@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Lapiz VERSION 0.5.0 LANGUAGES C CXX)
+project(Lapiz VERSION 0.9.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -34,6 +34,8 @@ target_sources(Lapiz PRIVATE
     Source/UI/SimplePage.h
     Source/UI/AdvancedPage.cpp
     Source/UI/AdvancedPage.h
+    Source/UI/EffectsPage.cpp
+    Source/UI/EffectsPage.h
     Source/UI/Panel.h
     Source/UI/LfoView.h
     Source/UI/WavesPage.cpp
@@ -41,8 +43,11 @@ target_sources(Lapiz PRIVATE
     Source/UI/WaveCanvas.h
     Source/UI/KeyframeList.h
     Source/UI/WavetablePicker.h
+    Source/UI/PresetBar.h
     Source/Lfo.h
+    Source/Effects.h
     Source/FactoryTables.h
+    Source/FactoryPresets.h
     Source/WavetableFile.h
     Source/UI/Theme.h
     Source/UI/Settings.h

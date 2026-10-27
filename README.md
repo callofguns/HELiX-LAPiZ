@@ -1,7 +1,19 @@
 # LAPiZ
 
-A wavetable synth for FL Studio (VST3, Windows), built to be powerful but easy for beginners:
+A wavetable synth by HELiX for FL Studio (VST3, Windows), built to be powerful but easy for beginners:
 plain-English controls, hover help on everything and live visual feedback.
+
+- **Simple** tab: pick a wavetable, shape the tone with a filter, and set how notes start and end.
+- **Waves** tab: draw your own wavetables with the mouse, blend between keyframes, save them as .wav.
+- **Advanced** tab: filter envelope, an LFO ("Wobble") and unison ("Thickness": up to 8 detuned copies per note).
+- **Effects** tab: distortion, chorus, ping-pong delay and reverb.
+- **Presets**: 14 built-in sounds, and save or load your own (Documents\LAPiZ\Presets).
+
+## Installing
+
+Run `LAPiZ-<version>-setup.exe`. It puts the plugin in `C:\Program Files\Common Files\VST3`
+(and, if you choose, the standalone app in `Program Files\HELiX\LAPiZ`).
+Then in FL Studio open **Options > Manage plugins**, click **Find installed plugins**, and star LAPiZ.
 
 ## Building
 
@@ -14,8 +26,14 @@ Then:
     cmake -S . -B build
     cmake --build build --config Release
 
-The plugin is copied to `Documents\VST3` after every build.
+The plugin is copied to `Documents\VST3` after every build (FL Studio must be closed while building).
 Run the tests with `build\LapizTests_artefacts\Release\LapizTests.exe` (exit code 0 means all passed).
+
+To make the installer, install [Inno Setup 6](https://jrsoftware.org/isinfo.php), build in Release, then run:
+
+    "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" installer\LAPiZ.iss
+
+The installer is written to `dist\`.
 
 ## License
 
@@ -33,6 +51,10 @@ You should have received a copy of the GNU Affero General Public License along w
 
 ### Third-party code and fonts
 
-- [JUCE](https://juce.com) 9.0.4, used under the AGPLv3 (JUCE is also available under a commercial licence).
-- Atkinson Hyperlegible font (Braille Institute), under the SIL Open Font License 1.1
-  (see `Resources/Fonts/OFL.txt`).
+LAPiZ is built with [JUCE](https://juce.com) 9.0.4, used under the AGPLv3 (JUCE is also available
+under a commercial licence), and includes the Atkinson Hyperlegible font (SIL Open Font License 1.1)
+and several permissively licensed libraries that come with JUCE (zlib, HarfBuzz, libpng, FLAC,
+the VST3 SDK and others). Their licences are reproduced in full in
+[THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt), which the installer also copies next to the app.
+
+VST is a registered trademark of Steinberg Media Technologies GmbH.

@@ -9,8 +9,9 @@
 #include "Panel.h"
 #include "Theme.h"
 
-// The Advanced tab: the controls that make a sound move over time.
+// The Advanced tab: the controls that make a sound move over time, and thicken it.
 //   Brightness over time - the filter envelope, which opens or closes the filter on every note
+//   Thickness            - unison: stacked, detuned copies of each note, spread left and right
 //   Wobble               - the LFO, a repeating movement for one control you choose
 class AdvancedPage : public juce::Component
 {
@@ -29,6 +30,9 @@ private:
     EnvelopeView filterEnvView;
     LabeledKnob fenvAttack, fenvDecay, fenvSustain, fenvRelease, fenvAmount;
 
+    // Unison
+    LabeledKnob unisonVoices, unisonDetune, unisonWidth;
+
     // LFO
     LfoView lfoView;
     LfoShapeButton shapeButtons[6] { LfoShapeButton (0), LfoShapeButton (1), LfoShapeButton (2),
@@ -41,6 +45,6 @@ private:
     std::unique_ptr<juce::ParameterAttachment> shapeAttachment, targetAttachment, syncAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> restartAttachment;
 
-    juce::Rectangle<float> envPanel, lfoPanel;
+    juce::Rectangle<float> envPanel, unisonPanel, lfoPanel;
     juce::Rectangle<int> shapeLabel, targetLabel, timingLabel;
 };

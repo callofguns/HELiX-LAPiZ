@@ -3,6 +3,7 @@
 #include <memory>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "Wavetable.h"
+#include "Effects.h"
 #include "LapizVoice.h"
 
 // Which wavetable is loaded, and where it came from.
@@ -59,13 +60,24 @@ public:
     // Your most recent drawing, kept after you switch to another table so it can be picked again.
     TableChoice getLastDrawing() const;
 
+    // Presets: a whole sound (every control plus the wavetable). Call these from the interface.
+    // A preset file holds the same thing a project does. Saved ones live in Documents\LAPiZ\Presets.
+    static constexpr const char* presetExtension = ".lapiz";
+    static juce::File presetFolder();
+    static juce::Array<juce::File> listUserPresets();
+    juce::String getPresetName() const;
+    juce::File getPresetFile() const;                // empty for a built-in preset
+    void loadFactoryPreset (int index);              // index into FactoryPresets::list()
+    bool loadPresetFile (const juce::File& file);    // false if the file couldn't be read
+    bool savePresetFile (const juce::File& file);    // false if the file couldn't be written
+
     bool hasEditor() const override { return true; }
 
     const juce::String getName() const override { return JucePlugin_Name; }
     bool acceptsMidi() const override  { return true; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
-    double getTailLengthSeconds() const override { return 0.0; }
+    double getTailLengthSeconds() const override { return 8.0; } // delay and reverb echoes can ring on after the notes stop
 
     int getNumPrograms() override { return 1; }
     int getCurrentProgram() override { return 0; }
@@ -82,6 +94,9 @@ private:
     void publishLiveState();
 
     void installTable (std::shared_ptr<const Wavetable> newTable, TableChoice newChoice);
+    std::unique_ptr<juce::XmlElement> createStateXml();
+    bool applyStateXml (const juce::XmlElement& xml);
+    void applyTableTree (const juce::ValueTree& tableTree);
     void timerCallback() override; // frees old wavetables once the audio thread is done with them
 
     static constexpr int numVoices = 8;
@@ -94,6 +109,8 @@ private:
     mutable juce::CriticalSection tableLock;
     std::shared_ptr<const Wavetable> table;
     TableChoice tableChoice, lastDrawing;
+    juce::String presetName { "Init" }; // also guarded by tableLock
+    juce::File presetFile;
     std::vector<std::shared_ptr<const Wavetable>> retired;
     std::atomic<const Wavetable*> audioTable { nullptr };
     std::atomic<bool> inBlock { false };
@@ -101,7 +118,11 @@ private:
 
     Lfo::Clock lfoClock;
     double lfoCycles = 0.0; // the shared LFO's position, in cycles
+    double bpm = 120.0;     // the song's tempo, read at the start of each block
     LiveState live;
+
+    Effects::Chain effects;
+    Effects::Params effectParams;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LapizAudioProcessor)
 };

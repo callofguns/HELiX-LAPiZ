@@ -11,15 +11,17 @@ LapizAudioProcessorEditor::LapizAudioProcessorEditor (LapizAudioProcessor& p)
     : AudioProcessorEditor (&p),
       processor (p),
       helpText (defaultHelp),
+      presetBar (p),
       simplePage (p, [this] (juce::Component& c, const juce::String& text) { registerHelp (c, text); }),
       wavesPage (p, [this] (juce::Component& c, const juce::String& text) { registerHelp (c, text); }),
-      advancedPage (p, [this] (juce::Component& c, const juce::String& text) { registerHelp (c, text); })
+      advancedPage (p, [this] (juce::Component& c, const juce::String& text) { registerHelp (c, text); }),
+      effectsPage (p, [this] (juce::Component& c, const juce::String& text) { registerHelp (c, text); })
 {
     Theme::currentLook() = Settings::loadLook();
     lookAndFeel.refreshColours();
     setLookAndFeel (&lookAndFeel);
 
-    for (auto* tab : { &simpleTab, &wavesTab, &advancedTab })
+    for (auto* tab : { &simpleTab, &wavesTab, &advancedTab, &effectsTab })
     {
         tab->setClickingTogglesState (true);
         tab->setRadioGroupId (1001);
@@ -28,6 +30,13 @@ LapizAudioProcessorEditor::LapizAudioProcessorEditor (LapizAudioProcessor& p)
     simpleTab.onClick   = [this] { showPage (Page::simple); };
     wavesTab.onClick    = [this] { showPage (Page::waves); };
     advancedTab.onClick = [this] { showPage (Page::advanced); };
+    effectsTab.onClick  = [this] { showPage (Page::effects); };
+
+    addAndMakeVisible (presetBar);
+    registerHelp (presetBar.getNameButton(), "Preset: a whole sound, ready to play. Click for the full list of built-in sounds and the ones you saved.");
+    registerHelp (presetBar.getPreviousButton(), "Previous preset.");
+    registerHelp (presetBar.getNextButton(), "Next preset.");
+    registerHelp (presetBar.getSaveButton(), "Save: keeps the current sound as a preset in Documents\\LAPiZ\\Presets, so you can load it in any project.");
 
     settingsButton.onClick = [this] { showSettingsMenu(); };
     addAndMakeVisible (settingsButton);
@@ -36,9 +45,11 @@ LapizAudioProcessorEditor::LapizAudioProcessorEditor (LapizAudioProcessor& p)
     addChildComponent (simplePage);
     addChildComponent (wavesPage);
     addChildComponent (advancedPage);
+    addChildComponent (effectsPage);
 
     const auto lastPage = Settings::loadPage();
-    showPage (lastPage == "waves" ? Page::waves : lastPage == "advanced" ? Page::advanced : Page::simple);
+    showPage (lastPage == "waves" ? Page::waves : lastPage == "advanced" ? Page::advanced
+            : lastPage == "effects" ? Page::effects : Page::simple);
 
     setResizable (false, false);
     setSize (900, 580);
@@ -87,12 +98,15 @@ void LapizAudioProcessorEditor::showPage (Page page)
     simplePage.setVisible (page == Page::simple);
     wavesPage.setVisible (page == Page::waves);
     advancedPage.setVisible (page == Page::advanced);
+    effectsPage.setVisible (page == Page::effects);
 
     simpleTab.setToggleState (page == Page::simple, juce::dontSendNotification);
     wavesTab.setToggleState (page == Page::waves, juce::dontSendNotification);
     advancedTab.setToggleState (page == Page::advanced, juce::dontSendNotification);
+    effectsTab.setToggleState (page == Page::effects, juce::dontSendNotification);
 
-    Settings::savePage (page == Page::waves ? "waves" : page == Page::advanced ? "advanced" : "simple");
+    Settings::savePage (page == Page::waves ? "waves" : page == Page::advanced ? "advanced"
+                      : page == Page::effects ? "effects" : "simple");
 }
 
 void LapizAudioProcessorEditor::setHelpText (const juce::String& text)
@@ -135,10 +149,6 @@ void LapizAudioProcessorEditor::paint (juce::Graphics& g)
     g.setFont (Theme::bold (26.0f));
     g.drawText (processor.getName(), header.removeFromLeft (110), juce::Justification::centredLeft);
 
-    g.setColour (p.soft);
-    g.setFont (Theme::regular (14.0f));
-    g.drawText ("Wavetable synth", header.removeFromLeft (200), juce::Justification::centredLeft);
-
     // Footer: help text on the left, version on the right
     auto footer = getLocalBounds().removeFromBottom (footerHeight).reduced (20, 0);
 
@@ -158,14 +168,22 @@ void LapizAudioProcessorEditor::resized()
     auto header = area.removeFromTop (headerHeight).reduced (20, 12);
     settingsButton.setBounds (header.removeFromRight (36));
     header.removeFromRight (12);
+    effectsTab.setBounds (header.removeFromRight (100));
+    header.removeFromRight (6);
     advancedTab.setBounds (header.removeFromRight (100));
     header.removeFromRight (6);
     wavesTab.setBounds (header.removeFromRight (100));
     header.removeFromRight (6);
     simpleTab.setBounds (header.removeFromRight (100));
 
+    // The preset bar sits between the LAPiZ name and the tabs.
+    header.removeFromLeft (110);
+    header.removeFromRight (16);
+    presetBar.setBounds (header);
+
     area.removeFromBottom (footerHeight);
     simplePage.setBounds (area);
     wavesPage.setBounds (area);
     advancedPage.setBounds (area);
+    effectsPage.setBounds (area);
 }

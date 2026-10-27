@@ -18,6 +18,17 @@ namespace
         const int i = juce::jlimit (0, (int) Lfo::divisions.size() - 1, juce::roundToInt (index));
         return Lfo::divisions[(size_t) i].name;
     }
+
+    juce::String copiesText (double v)
+    {
+        const int copies = juce::roundToInt (v);
+        return copies == 1 ? juce::String ("1 copy") : juce::String (copies) + " copies";
+    }
+
+    juce::String detuneText (double v)
+    {
+        return juce::String (juce::roundToInt (v * LapizVoice::maxDetuneCents)) + " cents";
+    }
 }
 
 AdvancedPage::AdvancedPage (LapizAudioProcessor& processor, HelpRegistrar registerHelp)
@@ -27,6 +38,9 @@ AdvancedPage::AdvancedPage (LapizAudioProcessor& processor, HelpRegistrar regist
       fenvSustain (processor.getState(), "fenvSustain", "Hold Level", "Sustain", Theme::Module::tone, Format::percent),
       fenvRelease (processor.getState(), "fenvRelease", "Return", "Release", Theme::Module::tone, Format::seconds),
       fenvAmount (processor.getState(), "fenvAmount", "Sweep", "Env Amount", Theme::Module::tone, Format::signedPercent),
+      unisonVoices (processor.getState(), "unisonVoices", "Copies", "Unison Voices", Theme::Module::sound, copiesText),
+      unisonDetune (processor.getState(), "unisonDetune", "Detune", "Unison Detune", Theme::Module::sound, detuneText),
+      unisonWidth (processor.getState(), "unisonWidth", "Width", "Stereo Spread", Theme::Module::sound, Format::percent),
       lfoView (processor.getState(), processor.getLive().lfoCycles),
       rate (processor.getState(), "lfoRate", "Speed", "LFO Rate", Theme::Module::motion, lfoRateText),
       division (processor.getState(), "lfoDivision", "Speed", "LFO Sync Rate", Theme::Module::motion, divisionText),
@@ -37,7 +51,8 @@ AdvancedPage::AdvancedPage (LapizAudioProcessor& processor, HelpRegistrar regist
     for (juce::Component* c : { (juce::Component*) &filterEnvView, (juce::Component*) &fenvAttack, (juce::Component*) &fenvDecay,
                                 (juce::Component*) &fenvSustain, (juce::Component*) &fenvRelease, (juce::Component*) &fenvAmount,
                                 (juce::Component*) &lfoView, (juce::Component*) &rate, (juce::Component*) &division,
-                                (juce::Component*) &amount })
+                                (juce::Component*) &amount, (juce::Component*) &unisonVoices, (juce::Component*) &unisonDetune,
+                                (juce::Component*) &unisonWidth })
         addAndMakeVisible (c);
 
     auto helpForKnob = [&] (LabeledKnob& knob, const juce::String& text)
@@ -57,6 +72,14 @@ AdvancedPage::AdvancedPage (LapizAudioProcessor& processor, HelpRegistrar regist
     helpForKnob (fenvRelease, "Return (Release): how long the filter takes to go back to the Brightness knob after you let go. Double-click to reset.");
     helpForKnob (fenvAmount, "Sweep (Filter Envelope Amount): how far each note moves the Brightness. Turn right to open it "
                              "(brighter), left to close it (darker). In the middle it does nothing. Double-click to reset.");
+
+    // ---- Unison ----
+    helpForKnob (unisonVoices, "Copies (Unison Voices): how many copies of each note play at once. More copies sound bigger and "
+                               "thicker, like a section of players instead of one. 1 turns unison off. Double-click to reset.");
+    helpForKnob (unisonDetune, "Detune (Unison Detune): how far the copies drift out of tune from each other. A little gives a rich, "
+                               "chorus-like shimmer; a lot gives the wide 'supersaw' sound. Needs 2 or more Copies. Double-click to reset.");
+    helpForKnob (unisonWidth, "Width (Stereo Spread): how far the copies spread between your left and right speakers. "
+                              "0 % keeps them all in the middle. Needs 2 or more Copies. Double-click to reset.");
 
     // ---- LFO shape ----
     const char* shapeHelp[6] = {
@@ -159,6 +182,7 @@ void AdvancedPage::paint (juce::Graphics& g)
     const auto& p = Theme::get();
 
     Panel::draw (g, envPanel, Theme::Module::tone, {}, "Brightness over time", "Filter envelope: sweeps the Brightness on every note");
+    Panel::draw (g, unisonPanel, Theme::Module::sound, {}, "Thickness", "Unison: stacked, detuned copies of each note");
     Panel::draw (g, lfoPanel, Theme::Module::motion, {}, "Wobble", "LFO: a repeating movement for one control");
 
     g.setColour (p.soft);
@@ -176,7 +200,12 @@ void AdvancedPage::resized()
     auto left = area.removeFromLeft (panelWidth);
     area.removeFromLeft (panelGap);
     auto right = area;
+
+    // The left column holds two panels: Thickness along the bottom, Brightness over time above it.
+    auto unison = left.removeFromBottom (Panel::titleHeight + knobRowHeight + 20);
+    left.removeFromBottom (panelGap);
     envPanel = left.toFloat();
+    unisonPanel = unison.toFloat();
     lfoPanel = right.toFloat();
 
     auto knobRow = [] (juce::Rectangle<int> row, std::initializer_list<juce::Component*> knobs)
@@ -194,6 +223,14 @@ void AdvancedPage::resized()
         knobRow (inner.removeFromBottom (knobRowHeight), { &fenvAttack, &fenvDecay, &fenvSustain, &fenvRelease, &fenvAmount });
         inner.removeFromBottom (10);
         filterEnvView.setBounds (inner);
+    }
+
+    // Thickness
+    {
+        auto inner = unison.reduced (14, 0);
+        inner.removeFromTop (Panel::titleHeight);
+        inner.removeFromBottom (10);
+        knobRow (inner.removeFromBottom (knobRowHeight), { &unisonVoices, &unisonDetune, &unisonWidth });
     }
 
     // Wobble

@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include "PluginProcessor.h"
+#include "FactoryPresets.h"
 #include "FactoryTables.h"
 #include "WavetableFile.h"
 #include "UI/LapizLookAndFeel.h"
@@ -205,6 +206,47 @@ namespace
             sum += (double) v * v;
         }
         return std::sqrt (sum / n);
+    }
+
+    // Plays one held note for `seconds` and returns both channels.
+    std::pair<std::vector<float>, std::vector<float>> renderStereo (std::initializer_list<Setting> settings, float seconds)
+    {
+        LapizAudioProcessor processor;
+        processor.setPlayConfigDetails (0, 2, testSampleRate, blockSize);
+        processor.prepareToPlay (testSampleRate, blockSize);
+        setParam (processor, "position", 2.0f / 3.0f);
+        for (auto& s : settings)
+            setParam (processor, s.first, s.second);
+
+        std::vector<float> left, right;
+        juce::AudioBuffer<float> buffer (2, blockSize);
+        for (int start = 0; start < (int) (seconds * (float) testSampleRate); start += blockSize)
+        {
+            juce::MidiBuffer midi;
+            if (start == 0)
+                midi.addEvent (juce::MidiMessage::noteOn (1, noteA3, 0.8f), 0);
+            buffer.clear();
+            processor.processBlock (buffer, midi);
+            for (int i = 0; i < blockSize; ++i)
+            {
+                left.push_back (buffer.getSample (0, i));
+                right.push_back (buffer.getSample (1, i));
+            }
+        }
+        return { left, right };
+    }
+
+    // RMS of (left - right) relative to the RMS of left: 0 means mono, higher means wider.
+    double sideAmount (const std::pair<std::vector<float>, std::vector<float>>& s)
+    {
+        double side = 0.0, mid = 0.0;
+        for (size_t i = (size_t) (0.05 * testSampleRate); i < s.first.size(); ++i)
+        {
+            const double d = (double) s.first[i] - s.second[i];
+            side += d * d;
+            mid += (double) s.first[i] * s.first[i];
+        }
+        return mid > 0.0 ? std::sqrt (side / mid) : 0.0;
     }
 
     int failures = 0;
@@ -533,6 +575,128 @@ int main (int argc, char** argv)
             }
             check (finite, "changing wavetables while a note plays stays finite");
         }
+    }
+
+    // Unison
+    {
+        const auto single = renderStereo ({}, 0.6f);
+        const auto stack = renderStereo ({ { "unisonVoices", 7.0f }, { "unisonDetune", 0.5f }, { "unisonWidth", 1.0f } }, 0.6f);
+        const auto narrow = renderStereo ({ { "unisonVoices", 7.0f }, { "unisonDetune", 0.5f }, { "unisonWidth", 0.0f } }, 0.6f);
+
+        check (sideAmount (single) < 1.0e-6, "one copy plays the same in both speakers");
+        check (sideAmount (narrow) < 1.0e-3, "unison with Width at 0 stays in the middle");
+        check (sideAmount (stack) > 0.3, "unison with full Width spreads the copies left and right");
+        check (allFinite (stack.first) && allFinite (stack.second) && peakOf (stack.first) < 1.0f && peakOf (stack.second) < 1.0f,
+               "7 detuned copies stay finite and below full scale");
+
+        const double singleRms = rmsBetween (single.first, 0.1, 0.6);
+        const double stackRms = rmsBetween (stack.first, 0.1, 0.6);
+        check (stackRms > 0.5 * singleRms && stackRms < 2.0 * singleRms, "unison keeps roughly the same loudness as one copy");
+
+        // Detuned copies drift in and out of phase, so the level ripples: a single copy's level doesn't.
+        auto ripple = [] (const std::vector<float>& s)
+        {
+            double lo = 1.0e9, hi = 0.0;
+            const double window = 5.0 / 220.0; // exactly 5 cycles of the note, so a steady note measures the same everywhere
+            for (double t = 0.3; t + window <= 0.6; t += 0.01) // after the volume envelope has settled
+            {
+                const double r = rmsBetween (s, t, t + window);
+                lo = std::min (lo, r);
+                hi = std::max (hi, r);
+            }
+            return hi / lo;
+        };
+        const auto stackMono = renderStereo ({ { "unisonVoices", 2.0f }, { "unisonDetune", 1.0f }, { "unisonWidth", 0.0f } }, 0.6f);
+        std::cout << "      level ripple: one copy " << ripple (single.first) << ", two detuned copies " << ripple (stackMono.first) << std::endl;
+        check (ripple (single.first) < 1.05 && ripple (stackMono.first) > 1.3, "Detune makes the copies beat against each other");
+    }
+
+    // Effects
+    {
+        const auto dry = render ({}, 0.3f, 1.0f);
+        const auto echo = render ({ { "delayOn", 1.0f }, { "delayFeedback", 0.6f }, { "delayMix", 0.5f } }, 0.3f, 1.0f);
+        const auto room = render ({ { "reverbOn", 1.0f }, { "reverbSize", 0.9f }, { "reverbMix", 1.0f } }, 0.3f, 1.0f);
+        check (dry.tailRms < 1.0e-4 && echo.tailRms > 1.0e-3, "Echo keeps repeating after the note has ended");
+        check (room.tailRms > 1.0e-3, "Space (reverb) rings on after the note has ended");
+
+        const auto clean = render ({ { "position", 0.0f } });
+        const auto gritty = render ({ { "position", 0.0f }, { "distOn", 1.0f }, { "distDrive", 1.0f }, { "distTone", 1.0f } });
+        check (gritty.allFinite && gritty.brightness > 1.5 * clean.brightness, "Grit (distortion) adds harmonics to a sine wave");
+        check (gritty.rms > 0.5 * clean.rms && gritty.peak < 1.0f, "Grit keeps roughly the same loudness, below full scale");
+
+        const auto chorus = renderStereo ({ { "chorusOn", 1.0f }, { "chorusDepth", 1.0f }, { "chorusMix", 1.0f } }, 0.6f);
+        check (sideAmount (chorus) > 0.05, "Chorus makes a single copy wider (left and right differ)");
+
+        const auto everything = renderStereo ({ { "unisonVoices", 8.0f }, { "distOn", 1.0f }, { "distDrive", 1.0f }, { "chorusOn", 1.0f },
+                                                { "delayOn", 1.0f }, { "delayFeedback", 0.9f }, { "delayMix", 1.0f },
+                                                { "reverbOn", 1.0f }, { "reverbMix", 1.0f } }, 2.0f);
+        check (allFinite (everything.first) && allFinite (everything.second) && peakOf (everything.first) < 2.0f,
+               "all effects at once, turned up, stay finite and don't blow up");
+    }
+
+    // Presets
+    {
+        bool allPlay = true;
+        for (int i = 0; i < (int) FactoryPresets::list().size(); ++i)
+        {
+            LapizAudioProcessor processor;
+            processor.setPlayConfigDetails (0, 2, testSampleRate, blockSize);
+            processor.prepareToPlay (testSampleRate, blockSize);
+            processor.loadFactoryPreset (i);
+
+            juce::AudioBuffer<float> buffer (2, blockSize);
+            float peak = 0.0f;
+            double sumSq = 0.0;
+            bool finite = true;
+            const int blocks = (int) (1.5 * testSampleRate) / blockSize;
+            for (int b = 0; b < blocks; ++b)
+            {
+                juce::MidiBuffer midi;
+                if (b == 0)
+                    for (int note : { 48, 55, 60 }) // a chord, so pads and leads get a fair test
+                        midi.addEvent (juce::MidiMessage::noteOn (1, note, 0.8f), 0);
+                buffer.clear();
+                processor.processBlock (buffer, midi);
+                for (int c = 0; c < 2; ++c)
+                    for (int s = 0; s < blockSize; ++s)
+                    {
+                        const float v = buffer.getSample (c, s);
+                        finite = finite && std::isfinite (v);
+                        peak = std::max (peak, std::abs (v));
+                        sumSq += (double) v * v;
+                    }
+            }
+            const double rms = std::sqrt (sumSq / (2.0 * blocks * blockSize));
+            const auto& preset = FactoryPresets::list()[(size_t) i];
+            const bool ok = finite && rms > 0.005 && peak < 1.0f && processor.getPresetName() == preset.name;
+            if (! ok)
+                std::cout << "      preset " << preset.name << ": peak " << peak << ", rms " << rms << std::endl;
+            allPlay = allPlay && ok;
+        }
+        check (allPlay, "every built-in preset loads and plays a chord that is audible and below full scale");
+
+        const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("LapizTestPreset.lapiz");
+        {
+            LapizAudioProcessor a;
+            a.loadFactoryPreset (5);
+            setParam (a, "cutoff", 1234.0f);
+            setParam (a, "reverbOn", 1.0f);
+            check (a.savePresetFile (file), "a preset saves as a file");
+
+            LapizAudioProcessor b;
+            check (b.loadPresetFile (file), "the preset file loads back");
+            const float cutoff = b.getState().getParameter ("cutoff")->convertFrom0to1 (b.getState().getParameter ("cutoff")->getValue());
+            check (std::abs (cutoff - 1234.0f) < 1.0f && b.getState().getRawParameterValue ("reverbOn")->load() > 0.5f
+                       && b.getPresetName() == "LapizTestPreset" && b.getTableChoice().factoryIndex == FactoryPresets::list()[5].table,
+                   "the loaded preset has the same controls, wavetable and name");
+
+            // Loading a preset resets controls it doesn't mention.
+            setParam (b, "unisonVoices", 6.0f);
+            b.loadFactoryPreset (0);
+            check (b.getState().getRawParameterValue ("unisonVoices")->load() < 1.5f && b.getPresetName() == "Init",
+                   "Init puts every control back to its default");
+        }
+        file.deleteFile();
     }
 
     std::cout << (failures == 0 ? "\nAll checks passed." : "\nSome checks FAILED.") << std::endl;

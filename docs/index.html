@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="LAPiZ by HELiX: a free, open-source wavetable synth for FL Studio that tells you what every knob does.">
+<title>LAPiZ by HELiX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap">
+<style>
+/* Layout: one column of stone-coloured bands; the hero pairs the wordmark with a live wavetable you can scan. */
+:root {
+  /* Dark-first: lapis lazuli ground, calcite-white text, pyrite-gold accent. */
+  --stone: #0f1d4a;        /* page ground: deep lapis */
+  --stone-deep: #0a1438;   /* wells, the wave display */
+  --vein: #22336e;         /* hairlines, borders */
+  --calcite: #eef1fb;      /* main text */
+  --mist: #a9b4d8;         /* secondary text */
+  --pyrite: #e2b84a;       /* accent: the gold flecks in lapis */
+  --ultramarine: #6f8bff;  /* the wave line */
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --stone: #f2f4fa; --stone-deep: #e3e8f5; --vein: #c9d1ea; --calcite: #13215a; --mist: #4a5786;
+    --pyrite: #8f6a0c; --ultramarine: #2f4fd6; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --stone: #f2f4fa; --stone-deep: #e3e8f5; --vein: #c9d1ea; --calcite: #13215a; --mist: #4a5786;
+  --pyrite: #8f6a0c; --ultramarine: #2f4fd6; color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: var(--stone);
+  color: var(--calcite);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+img { max-width: 100%; }
+a { color: var(--pyrite); }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--pyrite); outline-offset: 3px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h2 { font-size: clamp(1.6rem, 3.2vw, 2.25rem); font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; }
+h3 { font-size: 1.15rem; font-weight: 800; }
+p { margin: 0; max-width: 62ch; }
+section { padding-block: clamp(48px, 8vw, 88px); border-top: 1px solid var(--vein); }
+.lede { color: var(--mist); }
+.section-head { display: grid; gap: 12px; margin-bottom: 32px; }
+
+/* ---- Hero ---- */
+.hero { padding-block: clamp(32px, 6vw, 72px) clamp(48px, 8vw, 88px); }
+.brand { font-family: var(--display); font-weight: 800; font-size: 0.95rem; color: var(--mist); letter-spacing: 0.04em; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(24px, 5vw, 64px); align-items: center; margin-top: 28px; }
+.wordmark {
+  font-size: clamp(4.5rem, 14vw, 9.5rem);
+  font-weight: 800;
+  line-height: 0.85;
+  letter-spacing: -0.045em;
+}
+.wordmark .i { color: var(--pyrite); }
+.tagline { font-size: clamp(1.2rem, 2.2vw, 1.45rem); line-height: 1.4; margin-top: 22px; max-width: 26ch; }
+.facts { color: var(--mist); margin-top: 16px; font-size: 0.98rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin-top: 28px; }
+.button {
+  display: inline-block;
+  background: var(--pyrite);
+  color: var(--stone-deep);
+  font-weight: 700;
+  text-decoration: none;
+  padding: 12px 22px;
+  border-radius: 999px;
+}
+:root[data-theme="light"] .button { color: #fff; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .button { color: #fff; } }
+.quiet-link { color: var(--calcite); font-weight: 700; }
+
+.scope { display: grid; gap: 14px; }
+.scope canvas {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  display: block;
+  background: var(--stone-deep);
+  border: 1px solid var(--vein);
+  border-radius: 14px;
+}
+.knob-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+.knob-row label { font-weight: 700; line-height: 1.2; }
+.knob-row label small { display: block; font-weight: 400; font-size: 0.8rem; color: var(--mist); }
+.knob-row output { font-variant-numeric: tabular-nums; color: var(--mist); min-width: 4.5ch; text-align: right; }
+input[type="range"] { width: 100%; accent-color: var(--pyrite); }
+.shape-names { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--mist); padding-inline: 2px; }
+.shape-names span.on { color: var(--pyrite); font-weight: 700; }
+
+/* ---- Plain names ---- */
+.names { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 32px; margin: 0; }
+.names div { display: flex; justify-content: space-between; gap: 16px; padding-block: 12px; border-bottom: 1px solid var(--vein); }
+.names dt { font-weight: 700; }
+.names dd { margin: 0; color: var(--mist); text-align: right; }
+
+/* ---- Tabs ---- */
+.tabbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.tabbar button {
+  font: inherit; font-weight: 700; cursor: pointer;
+  background: transparent; color: var(--calcite);
+  border: 1px solid var(--vein); border-radius: 10px; padding: 8px 18px;
+}
+.tabbar button[aria-selected="true"] { background: var(--calcite); color: var(--stone); border-color: var(--calcite); }
+.tab-panel { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 40px); align-items: start; }
+.tab-panel img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--vein); display: block; }
+.tab-panel ul { margin: 14px 0 0; padding-left: 1.1em; color: var(--mist); display: grid; gap: 6px; }
+
+/* ---- Presets ---- */
+.presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 24px 32px; }
+.presets h3 { color: var(--pyrite); margin-bottom: 8px; }
+.presets ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+
+/* ---- Install ---- */
+.steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; max-width: 70ch; }
+.steps li { counter-increment: step; display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 14px; align-items: baseline; }
+.steps li::before {
+  content: counter(step);
+  font-family: var(--display); font-weight: 800; font-size: 1.4rem; color: var(--pyrite);
+}
+.steps b { color: var(--calcite); }
+.note { margin-top: 24px; color: var(--mist); font-size: 0.95rem; }
+
+footer { border-top: 1px solid var(--vein); padding-block: 32px 48px; color: var(--mist); font-size: 0.92rem; }
+footer .wrap { display: grid; gap: 8px; }
+
+@media (max-width: 760px) {
+  .hero-grid, .tab-panel { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="brand">HELiX</div>
+    <div class="hero-grid">
+      <div>
+        <h1 class="wordmark" aria-label="LAPiZ">LAP<span class="i">i</span>Z</h1>
+        <p class="tagline">A free wavetable synth for FL Studio that tells you what every knob does.</p>
+        <p class="facts">VST3 for Windows. Open source under the AGPLv3. Version 0.9 beta.</p>
+        <div class="actions">
+          <a class="button" href="https://github.com/callofguns/HELiX-LAPiZ">Get LAPiZ on GitHub</a>
+          <a class="quiet-link" href="#install">How to install</a>
+        </div>
+      </div>
+      <div class="scope">
+        <canvas id="scope" width="880" height="660" aria-label="A stack of waveforms from the Basic Shapes wavetable. The highlighted wave follows the Wave Shape slider."></canvas>
+        <div class="knob-row">
+          <label for="position">Wave Shape<small>Wavetable Position</small></label>
+          <input id="position" type="range" min="0" max="100" value="0" step="1">
+          <output id="position-value" for="position">0 %</output>
+        </div>
+        <div class="shape-names" aria-hidden="true"><span>Sine</span><span>Triangle</span><span>Saw</span><span>Square</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Every knob says what it does</h2>
+        <p class="lede">Controls have a plain name on top and the real synth term underneath, so you can start making sounds right away and learn the proper words as you go. Hover over anything in LAPiZ and the help bar explains it.</p>
+      </div>
+      <dl class="names">
+        <div><dt>Wave Shape</dt><dd>Wavetable Position</dd></div>
+        <div><dt>Brightness</dt><dd>Filter Cutoff</dd></div>
+        <div><dt>Emphasis</dt><dd>Resonance</dd></div>
+        <div><dt>Fade In</dt><dd>Attack</dd></div>
+        <div><dt>Drop</dt><dd>Decay</dd></div>
+        <div><dt>Hold Level</dt><dd>Sustain</dd></div>
+        <div><dt>Fade Out</dt><dd>Release</dd></div>
+        <div><dt>Wobble</dt><dd>LFO Amount</dd></div>
+        <div><dt>Copies</dt><dd>Unison Voices</dd></div>
+        <div><dt>Grit</dt><dd>Distortion</dd></div>
+        <div><dt>Echo</dt><dd>Delay</dd></div>
+        <div><dt>Space</dt><dd>Reverb</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Four tabs, from simple to deep</h2>
+        <p class="lede">Start on Simple. Everything else is there when you want it.</p>
+      </div>
+      <div class="tabbar" role="tablist" aria-label="LAPiZ tabs">
+        <button role="tab" id="tab-simple" aria-controls="panel" aria-selected="true" data-tab="simple">Simple</button>
+        <button role="tab" id="tab-waves" aria-controls="panel" aria-selected="false" data-tab="waves">Waves</button>
+        <button role="tab" id="tab-advanced" aria-controls="panel" aria-selected="false" data-tab="advanced">Advanced</button>
+        <button role="tab" id="tab-effects" aria-controls="panel" aria-selected="false" data-tab="effects">Effects</button>
+      </div>
+      <div class="tab-panel" id="panel" role="tabpanel" aria-labelledby="tab-simple">
+        <img id="tab-image" src="images/simple.png" alt="The Simple tab of LAPiZ" width="902" height="578">
+        <div>
+          <h3 id="tab-title">Simple</h3>
+          <p id="tab-text" class="lede"></p>
+          <ul id="tab-points"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>14 sounds to start from</h2>
+        <p class="lede">Pick one from the preset bar at the top of the window, change anything you like, then click Save to keep your version. Your presets are saved in Documents\LAPiZ\Presets and show up in every project.</p>
+      </div>
+      <div class="presets">
+        <div><h3>Bass</h3><ul><li>Sub Bass</li><li>Reese</li><li>Wobble</li><li>Growl</li></ul></div>
+        <div><h3>Lead</h3><ul><li>Supersaw</li><li>Sync Lead</li><li>Square Lead</li></ul></div>
+        <div><h3>Pad</h3><ul><li>Warm Pad</li><li>Glass Pad</li></ul></div>
+        <div><h3>Pluck</h3><ul><li>Soft Pluck</li><li>Digital Pluck</li></ul></div>
+        <div><h3>Keys</h3><ul><li>PWM Keys</li></ul></div>
+        <div><h3>FX</h3><ul><li>Siren</li></ul></div>
+        <div><h3>Start fresh</h3><ul><li>Init</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Install</h2>
+        <p class="lede">LAPiZ runs on 64-bit Windows in FL Studio or any other music software that loads VST3 plugins.</p>
+      </div>
+      <ol class="steps">
+        <li><p>Download <b>LAPiZ-0.9.0-beta-setup.exe</b> from the <a href="https://github.com/callofguns/HELiX-LAPiZ/releases">Releases page on GitHub</a>.</p></li>
+        <li><p>Run it. Windows may warn that the app is from an unknown publisher, because LAPiZ isn't code-signed yet. Click <b>More info</b>, then <b>Run anyway</b>.</p></li>
+        <li><p>In FL Studio, open <b>Options &gt; Manage plugins</b> and click <b>Find installed plugins</b>.</p></li>
+        <li><p>Find LAPiZ in the list (made by HELiX) and click its star. It now shows up in the plugin browser and the Channel Rack's + menu.</p></li>
+      </ol>
+      <p class="note">Prefer to build it yourself? The README on GitHub has the steps. You need Visual Studio Build Tools and CMake.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>LAPiZ is made by Dhruv under the HELiX name. It is free software: you can use it, study it, change it and share it under the GNU Affero General Public License, version 3.</p>
+    <p>Built with JUCE. VST is a registered trademark of Steinberg Media Technologies GmbH.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // ---- Live wavetable: the Basic Shapes table (sine, triangle, saw, square), drawn as a stack ----
+  const canvas = document.getElementById("scope");
+  const ctx = canvas.getContext("2d");
+  const slider = document.getElementById("position");
+  const readout = document.getElementById("position-value");
+  const names = document.querySelectorAll(".shape-names span");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const shapes = [
+    p => Math.sin(2 * Math.PI * p),
+    p => p < 0.25 ? 4 * p : p < 0.75 ? 2 - 4 * p : 4 * p - 4,
+    p => p < 0.5 ? 2 * p : 2 * p - 2,
+    p => p < 0.5 ? 1 : -1
+  ];
+
+  // Wave Shape blends smoothly between neighbouring shapes, like the synth does.
+  function sample(position, p) {
+    const x = position * (shapes.length - 1);
+    const i = Math.min(Math.floor(x), shapes.length - 2);
+    const t = x - i;
+    return shapes[i](p) * (1 - t) + shapes[i + 1](p) * t;
+  }
+
+  function colour(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  let position = 0;
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const layers = 16;
+    const depthX = w * 0.28, depthY = h * 0.30;
+    const waveW = w - depthX - 70, amp = h * 0.17;
+    const mist = colour("--mist"), line = colour("--ultramarine"), gold = colour("--pyrite");
+
+    // Back to front: each layer is one frame of the table.
+    for (let l = layers - 1; l >= 0; l--) {
+      const frame = l / (layers - 1);
+      const ox = 35 + depthX * frame, oy = h - 60 - amp - depthY * (1 - frame) - h * 0.06;
+      ctx.beginPath();
+      for (let k = 0; k <= 160; k++) {
+        const p = k / 160;
+        const y = oy - sample(frame, Math.min(p, 0.9999)) * amp;
+        k === 0 ? ctx.moveTo(ox + p * waveW, y) : ctx.lineTo(ox + p * waveW, y);
+      }
+      ctx.strokeStyle = mist;
+      ctx.globalAlpha = 0.28;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // The wave you hear, at the slider's position.
+    const ox = 35 + depthX * position, oy = h - 60 - amp - depthY * (1 - position) - h * 0.06;
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    for (let k = 0; k <= 320; k++) {
+      const p = k / 320;
+      const y = oy - sample(position, Math.min(p, 0.9999)) * amp;
+      k === 0 ? ctx.moveTo(ox + p * waveW, y) : ctx.lineTo(ox + p * waveW, y);
+    }
+    ctx.strokeStyle = line;
+    ctx.lineWidth = 5;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+
+    ctx.fillStyle = gold;
+    ctx.beginPath();
+    ctx.arc(ox, oy - sample(position, 0) * amp, 7, 0, 2 * Math.PI);
+    ctx.fill();
+
+    readout.textContent = Math.round(position * 100) + " %";
+    const nearest = Math.round(position * (shapes.length - 1));
+    names.forEach((n, i) => n.classList.toggle("on", i === nearest));
+  }
+
+  // Until you touch the slider, the wave slowly scans back and forth on its own.
+  let touched = false, start = null;
+  function tick(time) {
+    if (touched) return;
+    if (start === null) start = time;
+    position = 0.5 - 0.5 * Math.cos((time - start) / 4200);
+    slider.value = Math.round(position * 100);
+    draw();
+    requestAnimationFrame(tick);
+  }
+
+  slider.addEventListener("input", () => {
+    touched = true;
+    position = slider.value / 100;
+    draw();
+  });
+
+  draw();
+  if (!reduceMotion) requestAnimationFrame(tick);
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  // ---- Tab gallery ----
+  const tabs = {
+    simple: {
+      img: "images/simple.png",
+      text: "Three panels, left to right, in the order the sound flows: pick a raw tone, make it darker or brighter, and set how each note starts and ends.",
+      points: ["Wavetable picker with a stacked view of every wave", "Low-pass, high-pass and band-pass filter with a live curve", "Volume envelope you can see change as you turn it"]
+    },
+    waves: {
+      img: "images/waves.png",
+      text: "Draw your own wavetable with the mouse. Draw a few keyframes and LAPiZ blends smoothly between them as you turn Wave Shape.",
+      points: ["Freehand and straight-line drawing, with a snap grid", "Undo and redo, or start from a sine, triangle, saw or square", "Save as a .wav file that Serum and other synths can load"]
+    },
+    advanced: {
+      img: "images/advanced.png",
+      text: "Make the sound move and grow: sweep the filter on every note, add a repeating wobble, and stack detuned copies for a thick, wide sound.",
+      points: ["Filter envelope with its own Rise, Drop, Hold Level and Return", "LFO with six shapes, four targets and tempo sync", "Unison with up to 8 copies, Detune and stereo Width"]
+    },
+    effects: {
+      img: "images/effects.png",
+      text: "Four effects after the synth, in a fixed order: Grit, Chorus, Echo and Space. Each one has an on/off switch and three knobs.",
+      points: ["Grit: distortion with Drive, Tone and Mix", "Echo: ping-pong delay locked to your song's tempo", "Space: reverb from a small room to a big hall"]
+    }
+  };
+
+  const image = document.getElementById("tab-image");
+  const title = document.getElementById("tab-title");
+  const text = document.getElementById("tab-text");
+  const points = document.getElementById("tab-points");
+  const panel = document.getElementById("panel");
+  const buttons = document.querySelectorAll(".tabbar button");
+
+  function show(name) {
+    const t = tabs[name];
+    buttons.forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+    panel.setAttribute("aria-labelledby", "tab-" + name);
+    image.src = t.img;
+    image.alt = "The " + name.charAt(0).toUpperCase() + name.slice(1) + " tab of LAPiZ";
+    title.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+    text.textContent = t.text;
+    points.replaceChildren(...t.points.map(p => { const li = document.createElement("li"); li.textContent = p; return li; }));
+  }
+
+  buttons.forEach((b, i) => {
+    b.addEventListener("click", () => show(b.dataset.tab));
+    b.addEventListener("keydown", e => {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      const next = buttons[(i + (e.key === "ArrowRight" ? 1 : buttons.length - 1)) % buttons.length];
+      next.focus();
+      show(next.dataset.tab);
+    });
+  });
+  show("simple");
+})();
+</script>
+</body>
+</html>
