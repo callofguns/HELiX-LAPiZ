@@ -7,11 +7,11 @@
 // other wavetable synths use: frames of 2048 samples one after another in a mono file.
 namespace WavetableFile
 {
-    // Where Helix keeps your saved wavetables. They show up in the wavetable list.
+    // Where LAPiZ keeps your saved wavetables. They show up in the wavetable list.
     inline juce::File folder()
     {
         return juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
-                   .getChildFile ("Helix").getChildFile ("Wavetables");
+                   .getChildFile ("LAPiZ").getChildFile ("Wavetables");
     }
 
     inline juce::Array<juce::File> listUserFiles()

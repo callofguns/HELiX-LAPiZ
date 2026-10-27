@@ -3,15 +3,15 @@
 #include <juce_data_structures/juce_data_structures.h>
 #include "Theme.h"
 
-// Preferences that apply to every Helix, saved in the user's app-data folder
-// (on Windows: %APPDATA%\Helix\Helix.settings).
+// Preferences that apply to every LAPiZ, saved in the user's app-data folder
+// (on Windows: %APPDATA%\LAPiZ\LAPiZ.settings).
 namespace Settings
 {
     inline juce::PropertiesFile::Options fileOptions()
     {
         juce::PropertiesFile::Options options;
-        options.applicationName = "Helix";
-        options.folderName = "Helix";
+        options.applicationName = "LAPiZ";
+        options.folderName = "LAPiZ";
         options.filenameSuffix = ".settings";
         options.osxLibrarySubFolder = "Application Support";
         return options;
@@ -30,7 +30,7 @@ namespace Settings
         file.saveIfNeeded();
     }
 
-    // The tab that was open last ("simple", "waves" or "advanced"), so Helix reopens where you left off.
+    // The tab that was open last ("simple", "waves" or "advanced"), so LAPiZ reopens where you left off.
     inline juce::String loadPage()
     {
         juce::PropertiesFile file (fileOptions());

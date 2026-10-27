@@ -5,13 +5,13 @@
 #include "Theme.h"
 #include "../PluginProcessor.h"
 
-// Helix's signature display: the whole wavetable drawn as a stack of waves going back
+// LAPiZ's signature display: the whole wavetable drawn as a stack of waves going back
 // in depth, with the wave you are hearing right now lit up in the Sound colour.
 // Along the bottom: the waveform names (if the table has them), or which frame you are on.
 class WaveformView : public juce::Component, private juce::Timer
 {
 public:
-    explicit WaveformView (HelixAudioProcessor& processorToShow)
+    explicit WaveformView (LapizAudioProcessor& processorToShow)
         : processor (processorToShow),
           position (processorToShow.getState().getRawParameterValue ("position"))
     {
@@ -119,7 +119,7 @@ private:
         }
     }
 
-    HelixAudioProcessor& processor;
+    LapizAudioProcessor& processor;
     std::atomic<float>* position;
     float lastPosition = -1.0f;
     const Wavetable* lastTable = nullptr;

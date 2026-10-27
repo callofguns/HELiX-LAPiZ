@@ -20,7 +20,7 @@ namespace
     }
 }
 
-AdvancedPage::AdvancedPage (HelixAudioProcessor& processor, HelpRegistrar registerHelp)
+AdvancedPage::AdvancedPage (LapizAudioProcessor& processor, HelpRegistrar registerHelp)
     : filterEnvView (processor.getState(), "fenv", Theme::Module::tone, "fenvAmount"),
       fenvAttack (processor.getState(), "fenvAttack", "Rise", "Attack", Theme::Module::tone, Format::seconds),
       fenvDecay (processor.getState(), "fenvDecay", "Drop", "Decay", Theme::Module::tone, Format::seconds),

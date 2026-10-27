@@ -5,7 +5,7 @@
 #include <functional>
 #include "Wavetable.h"
 
-// The wavetables built into Helix. They are calculated from formulas when chosen,
+// The wavetables built into LAPiZ. They are calculated from formulas when chosen,
 // so they take no space in the plugin file.
 namespace FactoryTables
 {
@@ -91,7 +91,7 @@ namespace FactoryTables
                     float sum = 0.0f;
                     for (int k = 1; k <= harmonics; ++k)
                         sum += std::sin (twoPi * (float) k * p) / (float) k;
-                    return -sum; // same direction as Helix's saw (rising)
+                    return -sum; // same direction as LAPiZ's saw (rising)
                 }));
 
             case 4: // Wavefold: a sine driven harder and harder, so it folds back on itself

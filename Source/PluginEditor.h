@@ -4,17 +4,17 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PluginProcessor.h"
 #include "UI/AdvancedPage.h"
-#include "UI/HelixLookAndFeel.h"
+#include "UI/LapizLookAndFeel.h"
 #include "UI/SimplePage.h"
 #include "UI/WavesPage.h"
 
 // The plugin window: header with tabs and the settings button, the page below it,
 // and a help bar along the bottom.
-class HelixAudioProcessorEditor : public juce::AudioProcessorEditor
+class LapizAudioProcessorEditor : public juce::AudioProcessorEditor
 {
 public:
-    explicit HelixAudioProcessorEditor (HelixAudioProcessor&);
-    ~HelixAudioProcessorEditor() override;
+    explicit LapizAudioProcessorEditor (LapizAudioProcessor&);
+    ~LapizAudioProcessorEditor() override;
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -33,11 +33,11 @@ private:
     static constexpr int headerHeight = 56;
     static constexpr int footerHeight = 34;
 
-    HelixAudioProcessor& processor;
+    LapizAudioProcessor& processor;
 
     // Declared first so they outlive every component that uses them.
     juce::SharedResourcePointer<Theme::Fonts> fonts;
-    HelixLookAndFeel lookAndFeel;
+    LapizLookAndFeel lookAndFeel;
 
     // These must come before the pages: they register their help texts while being built.
     std::map<juce::Component*, juce::String> helpTexts;
@@ -50,5 +50,5 @@ private:
     WavesPage wavesPage;
     AdvancedPage advancedPage;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (HelixAudioProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LapizAudioProcessorEditor)
 };

@@ -3,9 +3,9 @@
 #include "FactoryTables.h"
 #include "WavetableFile.h"
 
-HelixAudioProcessor::HelixAudioProcessor()
+LapizAudioProcessor::LapizAudioProcessor()
     : AudioProcessor (BusesProperties().withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-      parameters (*this, nullptr, "HelixState", createParameterLayout())
+      parameters (*this, nullptr, "LapizState", createParameterLayout())
 {
     selectFactoryTable (0);
     blockTable = audioTable.load();
@@ -33,12 +33,12 @@ HelixAudioProcessor::HelixAudioProcessor()
     voiceParams.table = &blockTable;
 
     for (int i = 0; i < numVoices; ++i)
-        synth.addVoice (new HelixVoice (voiceParams));
+        synth.addVoice (new LapizVoice (voiceParams));
 
-    synth.addSound (new HelixSound());
+    synth.addSound (new LapizSound());
 }
 
-juce::AudioProcessorValueTreeState::ParameterLayout HelixAudioProcessor::createParameterLayout()
+juce::AudioProcessorValueTreeState::ParameterLayout LapizAudioProcessor::createParameterLayout()
 {
     using Param = juce::AudioParameterFloat;
     using Range = juce::NormalisableRange<float>;
@@ -104,7 +104,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout HelixAudioProcessor::createP
     return layout;
 }
 
-void HelixAudioProcessor::prepareToPlay (double sampleRate, int)
+void LapizAudioProcessor::prepareToPlay (double sampleRate, int)
 {
     synth.setCurrentPlaybackSampleRate (sampleRate);
 }
@@ -112,7 +112,7 @@ void HelixAudioProcessor::prepareToPlay (double sampleRate, int)
 // Sets the shared LFO's speed and position for the coming block.
 // In tempo mode, while FL Studio is playing, the LFO is locked to the song position,
 // so the wobble lands on the beat every time you press play.
-void HelixAudioProcessor::advanceLfoClock (int numSamples)
+void LapizAudioProcessor::advanceLfoClock (int numSamples)
 {
     const double sampleRate = getSampleRate() > 0.0 ? getSampleRate() : 44100.0;
     double cyclesPerSample = 0.0;
@@ -151,11 +151,11 @@ void HelixAudioProcessor::advanceLfoClock (int numSamples)
     lfoCycles = std::fmod (lfoCycles + (double) numSamples * cyclesPerSample, 1048576.0);
 }
 
-void HelixAudioProcessor::publishLiveState()
+void LapizAudioProcessor::publishLiveState()
 {
-    HelixVoice* newest = nullptr;
+    LapizVoice* newest = nullptr;
     for (int i = 0; i < synth.getNumVoices(); ++i)
-        if (auto* voice = dynamic_cast<HelixVoice*> (synth.getVoice (i)))
+        if (auto* voice = dynamic_cast<LapizVoice*> (synth.getVoice (i)))
             if (voice->isVoiceActive() && (newest == nullptr || voice->getStartOrder() > newest->getStartOrder()))
                 newest = voice;
 
@@ -164,13 +164,13 @@ void HelixAudioProcessor::publishLiveState()
     live.lfoCycles.store (newest != nullptr ? newest->getLfoCycles() : lfoClock.cyclesAtBlockStart);
 }
 
-bool HelixAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool LapizAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
     const auto out = layouts.getMainOutputChannelSet();
     return out == juce::AudioChannelSet::mono() || out == juce::AudioChannelSet::stereo();
 }
 
-void HelixAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
+void LapizAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
 
@@ -191,19 +191,19 @@ void HelixAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
 //==============================================================================
 // Wavetables
 
-std::shared_ptr<const Wavetable> HelixAudioProcessor::getTable() const
+std::shared_ptr<const Wavetable> LapizAudioProcessor::getTable() const
 {
     const juce::ScopedLock lock (tableLock);
     return table;
 }
 
-TableChoice HelixAudioProcessor::getTableChoice() const
+TableChoice LapizAudioProcessor::getTableChoice() const
 {
     const juce::ScopedLock lock (tableLock);
     return tableChoice;
 }
 
-void HelixAudioProcessor::selectFactoryTable (int index)
+void LapizAudioProcessor::selectFactoryTable (int index)
 {
     index = juce::jlimit (0, (int) FactoryTables::list.size() - 1, index);
 
@@ -214,7 +214,7 @@ void HelixAudioProcessor::selectFactoryTable (int index)
     installTable (std::make_shared<const Wavetable> (FactoryTables::make (index)), std::move (choice));
 }
 
-bool HelixAudioProcessor::selectTableFile (const juce::File& file)
+bool LapizAudioProcessor::selectTableFile (const juce::File& file)
 {
     auto frames = WavetableFile::load (file);
     if (frames.empty())
@@ -228,7 +228,7 @@ bool HelixAudioProcessor::selectTableFile (const juce::File& file)
     return true;
 }
 
-void HelixAudioProcessor::setDrawnTable (std::vector<Wavetable::Frame> keyframes, const juce::String& name, juce::uint32 editorTag)
+void LapizAudioProcessor::setDrawnTable (std::vector<Wavetable::Frame> keyframes, const juce::String& name, juce::uint32 editorTag)
 {
     if (keyframes.empty())
         return;
@@ -243,7 +243,7 @@ void HelixAudioProcessor::setDrawnTable (std::vector<Wavetable::Frame> keyframes
     installTable (std::move (newTable), std::move (choice));
 }
 
-void HelixAudioProcessor::renameDrawnTable (const juce::String& name)
+void LapizAudioProcessor::renameDrawnTable (const juce::String& name)
 {
     {
         const juce::ScopedLock lock (tableLock);
@@ -255,13 +255,13 @@ void HelixAudioProcessor::renameDrawnTable (const juce::String& name)
     sendChangeMessage();
 }
 
-TableChoice HelixAudioProcessor::getLastDrawing() const
+TableChoice LapizAudioProcessor::getLastDrawing() const
 {
     const juce::ScopedLock lock (tableLock);
     return lastDrawing;
 }
 
-void HelixAudioProcessor::installTable (std::shared_ptr<const Wavetable> newTable, TableChoice newChoice)
+void LapizAudioProcessor::installTable (std::shared_ptr<const Wavetable> newTable, TableChoice newChoice)
 {
     {
         const juce::ScopedLock lock (tableLock);
@@ -277,7 +277,7 @@ void HelixAudioProcessor::installTable (std::shared_ptr<const Wavetable> newTabl
     sendChangeMessage();
 }
 
-void HelixAudioProcessor::timerCallback()
+void LapizAudioProcessor::timerCallback()
 {
     // If the audio thread is not inside a block now, it can't still hold an old table:
     // the next block will read the new one.
@@ -286,14 +286,14 @@ void HelixAudioProcessor::timerCallback()
         retired.clear();
 }
 
-juce::AudioProcessorEditor* HelixAudioProcessor::createEditor()
+juce::AudioProcessorEditor* LapizAudioProcessor::createEditor()
 {
-    return new HelixAudioProcessorEditor (*this);
+    return new LapizAudioProcessorEditor (*this);
 }
 
 // The knobs are saved by the parameter tree. The wavetable is saved alongside it:
 // built-in and file tables by name or path, drawn tables with the drawings themselves.
-void HelixAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+void LapizAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = parameters.copyState();
     state.removeChild (state.getChildWithName ("Wavetable"), nullptr);
@@ -338,7 +338,7 @@ void HelixAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
         copyXmlToBinary (*xml, destData);
 }
 
-void HelixAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void LapizAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     auto xml = getXmlFromBinary (data, sizeInBytes);
     if (xml == nullptr || ! xml->hasTagName (parameters.state.getType()))
@@ -351,7 +351,7 @@ void HelixAudioProcessor::setStateInformation (const void* data, int sizeInBytes
 
     if (! tableTree.isValid())
     {
-        selectFactoryTable (0); // saved by Helix v0.3 or earlier, which only had the basic shapes
+        selectFactoryTable (0); // saved by v0.3 or earlier (when this synth was called Helix), which only had the basic shapes
         return;
     }
 
@@ -412,5 +412,5 @@ void HelixAudioProcessor::setStateInformation (const void* data, int sizeInBytes
 // This creates the plugin when the host (FL Studio) loads it.
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new HelixAudioProcessor();
+    return new LapizAudioProcessor();
 }

@@ -17,7 +17,7 @@ class AdvancedPage : public juce::Component
 public:
     using HelpRegistrar = std::function<void (juce::Component&, const juce::String&)>;
 
-    AdvancedPage (HelixAudioProcessor& processor, HelpRegistrar registerHelp);
+    AdvancedPage (LapizAudioProcessor& processor, HelpRegistrar registerHelp);
 
     void paint (juce::Graphics& g) override;
     void resized() override;

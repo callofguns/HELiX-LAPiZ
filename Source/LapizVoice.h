@@ -9,7 +9,7 @@
 #include "Wavetable.h"
 
 // Every synth needs a "sound" object; ours says it can play any note on any channel.
-struct HelixSound : public juce::SynthesiserSound
+struct LapizSound : public juce::SynthesiserSound
 {
     bool appliesToNote (int) override    { return true; }
     bool appliesToChannel (int) override { return true; }
@@ -48,14 +48,14 @@ struct VoiceParams
 // One voice plays one note. The synth owns several, so chords can play.
 // Signal path: wavetable oscillator -> filter -> volume envelope.
 // The filter envelope and the LFO move the controls while the note plays.
-class HelixVoice : public juce::SynthesiserVoice
+class LapizVoice : public juce::SynthesiserVoice
 {
 public:
-    explicit HelixVoice (const VoiceParams& p) : params (p) {}
+    explicit LapizVoice (const VoiceParams& p) : params (p) {}
 
     bool canPlaySound (juce::SynthesiserSound* sound) override
     {
-        return dynamic_cast<HelixSound*> (sound) != nullptr;
+        return dynamic_cast<LapizSound*> (sound) != nullptr;
     }
 
     void setCurrentPlaybackSampleRate (double newRate) override

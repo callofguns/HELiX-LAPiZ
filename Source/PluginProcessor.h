@@ -3,7 +3,7 @@
 #include <memory>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "Wavetable.h"
-#include "HelixVoice.h"
+#include "LapizVoice.h"
 
 // Which wavetable is loaded, and where it came from.
 struct TableChoice
@@ -20,13 +20,13 @@ struct TableChoice
 
 // The "processor" is the plugin itself: it receives MIDI notes and produces audio.
 // It sends a change message whenever a different wavetable is loaded.
-class HelixAudioProcessor : public juce::AudioProcessor,
+class LapizAudioProcessor : public juce::AudioProcessor,
                             public juce::ChangeBroadcaster,
                             private juce::Timer
 {
 public:
-    HelixAudioProcessor();
-    ~HelixAudioProcessor() override = default;
+    LapizAudioProcessor();
+    ~LapizAudioProcessor() override = default;
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override {}
@@ -103,5 +103,5 @@ private:
     double lfoCycles = 0.0; // the shared LFO's position, in cycles
     LiveState live;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (HelixAudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LapizAudioProcessor)
 };

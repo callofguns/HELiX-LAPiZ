@@ -28,7 +28,7 @@ namespace
     }
 }
 
-WavesPage::WavesPage (HelixAudioProcessor& p, HelpRegistrar registerHelp)
+WavesPage::WavesPage (LapizAudioProcessor& p, HelpRegistrar registerHelp)
     : processor (p),
       tag ((juce::uint32) juce::Random::getSystemRandom().nextInt() | 1u),
       picker (p),
@@ -96,14 +96,14 @@ WavesPage::WavesPage (HelixAudioProcessor& p, HelpRegistrar registerHelp)
     removeButton.onClick  = [this] { removeKeyframe(); };
 
     // Hover help
-    registerHelp (picker.getNameButton(), "Wavetable: the set of waves Helix plays. Click for the full list.");
+    registerHelp (picker.getNameButton(), "Wavetable: the set of waves LAPiZ plays. Click for the full list.");
     registerHelp (picker.getPreviousButton(), "Previous wavetable.");
     registerHelp (picker.getNextButton(), "Next wavetable.");
     registerHelp (newButton, "New drawing: start your own wavetable with two keyframes (a sine and a saw) to draw on.");
     registerHelp (copyButton, "Edit a copy: turns the current wavetable into keyframes you can draw on. "
                               "Tables with more than 8 waves are reduced to 8 evenly spaced ones. The original isn't changed.");
-    registerHelp (saveButton, "Save as file: saves your drawing as a .wav wavetable in Documents\\Helix\\Wavetables. "
-                              "It then appears in the wavetable list in every Helix, and other synths like Serum can load it too.");
+    registerHelp (saveButton, "Save as file: saves your drawing as a .wav wavetable in Documents\\LAPiZ\\Wavetables. "
+                              "It then appears in the wavetable list in every LAPiZ, and other synths like Serum can load it too.");
     registerHelp (canvas, "Draw on the selected keyframe with the mouse. You hear the change straight away.");
     registerHelp (drawTool, "Draw: drag to paint the wave freehand.");
     registerHelp (lineTool, "Line: press, drag and let go to draw a straight line. Good for clean, sharp waves.");
@@ -338,7 +338,7 @@ void WavesPage::saveAsFile()
                               else
                               {
                                   juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, "Couldn't save",
-                                      "Helix couldn't write " + file.getFullPathName()
+                                      "LAPiZ couldn't write " + file.getFullPathName()
                                       + ". Check that the folder exists and isn't read-only, then try again.");
                               }
                           });

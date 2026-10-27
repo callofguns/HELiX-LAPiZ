@@ -3,12 +3,12 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "Theme.h"
 
-// Draws JUCE's built-in controls (knobs, buttons, menus) in Helix's style.
+// Draws JUCE's built-in controls (knobs, buttons, menus) in LAPiZ's style.
 // Everything reads the current palette when it paints, so switching looks only needs a repaint.
-class HelixLookAndFeel : public juce::LookAndFeel_V4
+class LapizLookAndFeel : public juce::LookAndFeel_V4
 {
 public:
-    HelixLookAndFeel() { refreshColours(); }
+    LapizLookAndFeel() { refreshColours(); }
 
     // Menus keep their own colour settings, so they are updated when the look changes.
     void refreshColours()

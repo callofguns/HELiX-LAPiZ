@@ -21,7 +21,7 @@ public:
     // registerHelp tells the window which text to show in the help bar when the mouse is over a control.
     using HelpRegistrar = std::function<void (juce::Component&, const juce::String&)>;
 
-    SimplePage (HelixAudioProcessor& processor, HelpRegistrar registerHelp);
+    SimplePage (LapizAudioProcessor& processor, HelpRegistrar registerHelp);
 
     void paint (juce::Graphics& g) override;
     void resized() override;

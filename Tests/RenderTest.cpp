@@ -1,5 +1,5 @@
-﻿// Renders notes through the synth with no host and no speakers, and checks the numbers.
-// Run it with: build\HelixTests_artefacts\Release\HelixTests.exe  (exit code 0 means all passed)
+// Renders notes through the synth with no host and no speakers, and checks the numbers.
+// Run it with: build\LapizTests_artefacts\Release\LapizTests.exe  (exit code 0 means all passed)
 
 #include <algorithm>
 #include <cmath>
@@ -7,7 +7,7 @@
 #include "PluginProcessor.h"
 #include "FactoryTables.h"
 #include "WavetableFile.h"
-#include "UI/HelixLookAndFeel.h"
+#include "UI/LapizLookAndFeel.h"
 #include "UI/WavesPage.h"
 
 namespace
@@ -28,7 +28,7 @@ namespace
 
     using Setting = std::pair<const char*, float>; // parameter id, real (not 0..1) value
 
-    void setParam (HelixAudioProcessor& p, const char* id, float realValue)
+    void setParam (LapizAudioProcessor& p, const char* id, float realValue)
     {
         auto* param = p.getState().getParameter (id);
         param->setValueNotifyingHost (param->convertTo0to1 (realValue));
@@ -38,7 +38,7 @@ namespace
     std::vector<float> renderSamples (std::initializer_list<Setting> settings, int note,
                                       float holdSeconds, float tailSeconds)
     {
-        HelixAudioProcessor processor;
+        LapizAudioProcessor processor;
         processor.setPlayConfigDetails (0, 2, testSampleRate, blockSize);
         processor.prepareToPlay (testSampleRate, blockSize);
 
@@ -216,10 +216,10 @@ namespace
     }
 }
 
-// HelixTests.exe --snapshot <file.png>: draws the Waves tab with a drawing loaded and saves a picture of it.
+// LapizTests.exe --snapshot <file.png>: draws the Waves tab with a drawing loaded and saves a picture of it.
 static int saveWavesSnapshot (const juce::File& file)
 {
-    HelixAudioProcessor processor;
+    LapizAudioProcessor processor;
     std::vector<Wavetable::Frame> frames;
     for (int f = 0; f < 3; ++f)
     {
@@ -236,7 +236,7 @@ static int saveWavesSnapshot (const juce::File& file)
     processor.setDrawnTable (frames, "My drawing");
 
     juce::SharedResourcePointer<Theme::Fonts> fonts;
-    HelixLookAndFeel lookAndFeel;
+    LapizLookAndFeel lookAndFeel;
     WavesPage page (processor, [] (juce::Component&, const juce::String&) {});
     page.setLookAndFeel (&lookAndFeel);
     page.setBounds (0, 0, 900, 490);
@@ -321,9 +321,9 @@ int main (int argc, char** argv)
 
     // ---- Aliasing, measured on a high note ----
     const double highFreq = 440.0 * std::pow (2.0, (noteHigh - 69) / 12.0);
-    const auto helixHigh = renderSamples ({}, noteHigh, 1.5f, 0.1f);
+    const auto lapizHigh = renderSamples ({}, noteHigh, 1.5f, 0.1f);
 
-    std::vector<float> naive (helixHigh.size());
+    std::vector<float> naive (lapizHigh.size());
     for (size_t i = 0; i < naive.size(); ++i)
     {
         const double phase = std::fmod (highFreq * (double) i / testSampleRate, 1.0);
@@ -332,12 +332,12 @@ int main (int argc, char** argv)
 
     const size_t analysisStart = (size_t) (0.5 * testSampleRate);
     const double naiveFraction = nonHarmonicFraction (naive, analysisStart, highFreq);
-    const double helixFraction = nonHarmonicFraction (helixHigh, analysisStart, highFreq);
+    const double lapizFraction = nonHarmonicFraction (lapizHigh, analysisStart, highFreq);
     std::cout << "note " << noteHigh << " (" << highFreq << " Hz): energy between the harmonics -- "
-              << "naive saw " << 10.0 * std::log10 (naiveFraction) << " dB, Helix "
-              << 10.0 * std::log10 (std::max (helixFraction, 1.0e-12)) << " dB" << std::endl;
+              << "naive saw " << 10.0 * std::log10 (naiveFraction) << " dB, LAPiZ "
+              << 10.0 * std::log10 (std::max (lapizFraction, 1.0e-12)) << " dB" << std::endl;
     check (naiveFraction > 1.0e-3, "the measurement detects aliasing in a naive saw (above -30 dB)");
-    check (helixFraction < 1.0e-5, "Helix's high note has almost no energy between the harmonics (below -50 dB)");
+    check (lapizFraction < 1.0e-5, "LAPiZ's high note has almost no energy between the harmonics (below -50 dB)");
 
     // ---- Filter envelope ----
     {
@@ -423,7 +423,7 @@ int main (int argc, char** argv)
         bool allPlay = true;
         for (int t = 0; t < (int) FactoryTables::list.size(); ++t)
         {
-            HelixAudioProcessor processor;
+            LapizAudioProcessor processor;
             processor.setPlayConfigDetails (0, 2, testSampleRate, blockSize);
             processor.prepareToPlay (testSampleRate, blockSize);
             processor.selectFactoryTable (t);
@@ -474,7 +474,7 @@ int main (int argc, char** argv)
         };
 
         // .wav file
-        const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("HelixTestTable.wav");
+        const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("LapizTestTable.wav");
         check (WavetableFile::save (file, drawn), "a drawing saves as a .wav file");
         const auto loaded = WavetableFile::load (file);
         check (sameFrames (loaded, drawn), "the .wav file loads back with the same 3 waves");
@@ -482,12 +482,12 @@ int main (int argc, char** argv)
         // Project save and load
         juce::MemoryBlock project;
         {
-            HelixAudioProcessor a;
+            LapizAudioProcessor a;
             a.setDrawnTable (drawn, "Test drawing");
             a.getStateInformation (project);
         }
         {
-            HelixAudioProcessor b;
+            LapizAudioProcessor b;
             b.setStateInformation (project.getData(), (int) project.getSize());
             const auto choice = b.getTableChoice();
             check (choice.kind == TableChoice::Kind::drawn && choice.name == "Test drawing" && sameFrames (choice.keyframes, drawn),
@@ -496,13 +496,13 @@ int main (int argc, char** argv)
 
         // A file table whose file has gone missing still loads from the copy stored in the project
         {
-            HelixAudioProcessor a;
+            LapizAudioProcessor a;
             a.selectTableFile (file);
             a.getStateInformation (project);
         }
         file.deleteFile();
         {
-            HelixAudioProcessor b;
+            LapizAudioProcessor b;
             b.setStateInformation (project.getData(), (int) project.getSize());
             const auto restored = b.getTable();
             bool same = restored->getNumFrames() == 3;
@@ -515,7 +515,7 @@ int main (int argc, char** argv)
 
         // Switching tables while a note is playing
         {
-            HelixAudioProcessor processor;
+            LapizAudioProcessor processor;
             processor.setPlayConfigDetails (0, 2, testSampleRate, blockSize);
             processor.prepareToPlay (testSampleRate, blockSize);
             juce::AudioBuffer<float> buffer (2, blockSize);

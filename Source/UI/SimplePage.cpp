@@ -16,7 +16,7 @@ namespace
     };
 }
 
-SimplePage::SimplePage (HelixAudioProcessor& processor, HelpRegistrar registerHelp)
+SimplePage::SimplePage (LapizAudioProcessor& processor, HelpRegistrar registerHelp)
     : picker (processor),
       waveView (processor),
       position (processor.getState(), "position", "Wave Shape", "Wave Position", Theme::Module::sound, Format::percent),
@@ -80,7 +80,7 @@ SimplePage::SimplePage (HelixAudioProcessor& processor, HelpRegistrar registerHe
         registerHelp (knob.getSlider(), text);
     };
 
-    registerHelp (picker.getNameButton(), "Wavetable: the set of waves Helix plays. Click for the full list: built-in tables, "
+    registerHelp (picker.getNameButton(), "Wavetable: the set of waves LAPiZ plays. Click for the full list: built-in tables, "
                                           "your saved ones and your latest drawing. Draw your own on the Waves tab.");
     registerHelp (picker.getPreviousButton(), "Previous wavetable.");
     registerHelp (picker.getNextButton(), "Next wavetable.");

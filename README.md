@@ -1,4 +1,4 @@
-# Helix
+# LAPiZ
 
 A wavetable synth for FL Studio (VST3, Windows), built to be powerful but easy for beginners:
 plain-English controls, hover help on everything and live visual feedback.
@@ -15,7 +15,7 @@ Then:
     cmake --build build --config Release
 
 The plugin is copied to `Documents\VST3` after every build.
-Run the tests with `build\HelixTests_artefacts\Release\HelixTests.exe` (exit code 0 means all passed).
+Run the tests with `build\LapizTests_artefacts\Release\LapizTests.exe` (exit code 0 means all passed).
 
 ## License
 

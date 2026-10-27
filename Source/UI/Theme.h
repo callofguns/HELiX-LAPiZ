@@ -71,7 +71,7 @@ namespace Theme
     }
 
     // Atkinson Hyperlegible, embedded in the plugin (SIL Open Font License, see Resources/Fonts/OFL.txt).
-    // Shared between all open Helix windows and released when the last one closes.
+    // Shared between all open LAPiZ windows and released when the last one closes.
     struct Fonts
     {
         juce::Typeface::Ptr regular = juce::Typeface::createSystemTypefaceFor (

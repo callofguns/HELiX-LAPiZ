@@ -18,7 +18,7 @@ class WavesPage : public juce::Component, private juce::ChangeListener, private 
 public:
     using HelpRegistrar = std::function<void (juce::Component&, const juce::String&)>;
 
-    WavesPage (HelixAudioProcessor& processor, HelpRegistrar registerHelp);
+    WavesPage (LapizAudioProcessor& processor, HelpRegistrar registerHelp);
     ~WavesPage() override;
 
     void paint (juce::Graphics& g) override;
@@ -54,7 +54,7 @@ private:
 
     bool isDrawing() const { return processor.getTableChoice().kind == TableChoice::Kind::drawn; }
 
-    HelixAudioProcessor& processor;
+    LapizAudioProcessor& processor;
     const juce::uint32 tag;
 
     // The drawing being edited. The processor plays a copy, updated as you draw.

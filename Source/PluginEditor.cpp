@@ -7,7 +7,7 @@ namespace
     const juce::String defaultHelp = "Hover over any knob or button to see what it does.";
 }
 
-HelixAudioProcessorEditor::HelixAudioProcessorEditor (HelixAudioProcessor& p)
+LapizAudioProcessorEditor::LapizAudioProcessorEditor (LapizAudioProcessor& p)
     : AudioProcessorEditor (&p),
       processor (p),
       helpText (defaultHelp),
@@ -31,7 +31,7 @@ HelixAudioProcessorEditor::HelixAudioProcessorEditor (HelixAudioProcessor& p)
 
     settingsButton.onClick = [this] { showSettingsMenu(); };
     addAndMakeVisible (settingsButton);
-    registerHelp (settingsButton, "Settings: switch between the Dark and Daylight look. Your choice is remembered for every Helix you open.");
+    registerHelp (settingsButton, "Settings: switch between the Dark and Daylight look. Your choice is remembered for every LAPiZ you open.");
 
     addChildComponent (simplePage);
     addChildComponent (wavesPage);
@@ -44,12 +44,12 @@ HelixAudioProcessorEditor::HelixAudioProcessorEditor (HelixAudioProcessor& p)
     setSize (900, 580);
 }
 
-HelixAudioProcessorEditor::~HelixAudioProcessorEditor()
+LapizAudioProcessorEditor::~LapizAudioProcessorEditor()
 {
     setLookAndFeel (nullptr);
 }
 
-void HelixAudioProcessorEditor::showSettingsMenu()
+void LapizAudioProcessorEditor::showSettingsMenu()
 {
     const bool dark = Theme::currentLook() == Theme::Look::dark;
 
@@ -58,7 +58,7 @@ void HelixAudioProcessorEditor::showSettingsMenu()
     menu.addItem (1, "Dark", true, dark);
     menu.addItem (2, "Daylight", true, ! dark);
 
-    juce::Component::SafePointer<HelixAudioProcessorEditor> safeThis (this);
+    juce::Component::SafePointer<LapizAudioProcessorEditor> safeThis (this);
     menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&settingsButton),
                         [safeThis] (int result)
                         {
@@ -68,7 +68,7 @@ void HelixAudioProcessorEditor::showSettingsMenu()
                         });
 }
 
-void HelixAudioProcessorEditor::setLook (Theme::Look look)
+void LapizAudioProcessorEditor::setLook (Theme::Look look)
 {
     Theme::currentLook() = look;
     Settings::saveLook (look);
@@ -76,13 +76,13 @@ void HelixAudioProcessorEditor::setLook (Theme::Look look)
     repaint();
 }
 
-void HelixAudioProcessorEditor::registerHelp (juce::Component& component, const juce::String& text)
+void LapizAudioProcessorEditor::registerHelp (juce::Component& component, const juce::String& text)
 {
     helpTexts[&component] = text;
     component.addMouseListener (this, false);
 }
 
-void HelixAudioProcessorEditor::showPage (Page page)
+void LapizAudioProcessorEditor::showPage (Page page)
 {
     simplePage.setVisible (page == Page::simple);
     wavesPage.setVisible (page == Page::waves);
@@ -95,7 +95,7 @@ void HelixAudioProcessorEditor::showPage (Page page)
     Settings::savePage (page == Page::waves ? "waves" : page == Page::advanced ? "advanced" : "simple");
 }
 
-void HelixAudioProcessorEditor::setHelpText (const juce::String& text)
+void LapizAudioProcessorEditor::setHelpText (const juce::String& text)
 {
     if (helpText != text)
     {
@@ -104,7 +104,7 @@ void HelixAudioProcessorEditor::setHelpText (const juce::String& text)
     }
 }
 
-void HelixAudioProcessorEditor::mouseEnter (const juce::MouseEvent& e)
+void LapizAudioProcessorEditor::mouseEnter (const juce::MouseEvent& e)
 {
     auto found = helpTexts.find (e.eventComponent);
     if (found != helpTexts.end())
@@ -114,7 +114,7 @@ void HelixAudioProcessorEditor::mouseEnter (const juce::MouseEvent& e)
     }
 }
 
-void HelixAudioProcessorEditor::mouseExit (const juce::MouseEvent& e)
+void LapizAudioProcessorEditor::mouseExit (const juce::MouseEvent& e)
 {
     // Only clear the text if it belongs to the control the mouse just left.
     if (e.eventComponent == helpOwner)
@@ -124,7 +124,7 @@ void HelixAudioProcessorEditor::mouseExit (const juce::MouseEvent& e)
     }
 }
 
-void HelixAudioProcessorEditor::paint (juce::Graphics& g)
+void LapizAudioProcessorEditor::paint (juce::Graphics& g)
 {
     const auto& p = Theme::get();
     g.fillAll (p.ground);
@@ -133,7 +133,7 @@ void HelixAudioProcessorEditor::paint (juce::Graphics& g)
     auto header = getLocalBounds().removeFromTop (headerHeight).reduced (20, 0);
     g.setColour (p.ink);
     g.setFont (Theme::bold (26.0f));
-    g.drawText (processor.getName(), header.removeFromLeft (90), juce::Justification::centredLeft);
+    g.drawText (processor.getName(), header.removeFromLeft (110), juce::Justification::centredLeft);
 
     g.setColour (p.soft);
     g.setFont (Theme::regular (14.0f));
@@ -151,7 +151,7 @@ void HelixAudioProcessorEditor::paint (juce::Graphics& g)
     g.drawFittedText (helpText, footer, juce::Justification::centredLeft, 2);
 }
 
-void HelixAudioProcessorEditor::resized()
+void LapizAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds();
 

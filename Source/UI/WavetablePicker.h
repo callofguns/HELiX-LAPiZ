@@ -11,7 +11,7 @@
 class WavetablePicker : public juce::Component, private juce::ChangeListener
 {
 public:
-    explicit WavetablePicker (HelixAudioProcessor& p) : processor (p)
+    explicit WavetablePicker (LapizAudioProcessor& p) : processor (p)
     {
         for (auto* b : { &previous, &next, &nameButton })
             addAndMakeVisible (b);
@@ -161,6 +161,6 @@ private:
 
     void changeListenerCallback (juce::ChangeBroadcaster*) override { refresh(); }
 
-    HelixAudioProcessor& processor;
+    LapizAudioProcessor& processor;
     juce::TextButton previous { "<" }, next { ">" }, nameButton;
 };
