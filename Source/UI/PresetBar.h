@@ -98,9 +98,20 @@ private:
         const auto all = entries();
         const int now = currentIndex (all);
 
-        juce::PopupMenu menu;
-        juce::String category = "-";
+        // Built-in presets go in one submenu per category (they're listed category by category),
+        // except those with no category, like Init, which sit at the top.
+        juce::PopupMenu menu, categoryMenu;
+        juce::String category;
+        bool categoryTicked = false;
         bool userHeaderShown = false;
+
+        auto finishCategory = [&]
+        {
+            if (category.isNotEmpty())
+                menu.addSubMenu (category, categoryMenu, true, nullptr, categoryTicked);
+            categoryMenu = {};
+            categoryTicked = false;
+        };
 
         for (size_t i = 0; i < all.size(); ++i)
         {
@@ -113,16 +124,21 @@ private:
                 const auto& preset = FactoryPresets::list()[(size_t) e.factoryIndex];
                 if (category != preset.category)
                 {
+                    finishCategory();
                     category = preset.category;
-                    if (category.isNotEmpty())
-                        menu.addSectionHeader (category);
                 }
-                menu.addItem (id, preset.name, true, ticked);
+                if (category.isEmpty())
+                    menu.addItem (id, preset.name, true, ticked);
+                else
+                    categoryMenu.addItem (id, preset.name, true, ticked);
+                categoryTicked = categoryTicked || ticked;
             }
             else
             {
                 if (! userHeaderShown)
                 {
+                    finishCategory();
+                    category = {};
                     menu.addSectionHeader ("My presets");
                     userHeaderShown = true;
                 }
@@ -132,6 +148,7 @@ private:
 
         if (! userHeaderShown)
         {
+            finishCategory();
             menu.addSectionHeader ("My presets");
             menu.addItem (-1, "Click Save to keep your own sounds", false, false);
         }

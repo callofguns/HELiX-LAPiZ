@@ -249,6 +249,56 @@ namespace
         return mid > 0.0 ? std::sqrt (side / mid) : 0.0;
     }
 
+    // Loads a built-in preset and plays a three-note chord for 1.5 seconds.
+    // "loudest" is the level of the loudest 0.3 seconds, closer to how loud a short note sounds than the overall rms.
+    struct PresetLevel { bool finite = true; float peak = 0.0f; double rms = 0.0, loudest = 0.0; juce::String loadedName; };
+
+    PresetLevel playPresetChord (int index)
+    {
+        LapizAudioProcessor processor;
+        processor.setPlayConfigDetails (0, 2, testSampleRate, blockSize);
+        processor.prepareToPlay (testSampleRate, blockSize);
+        processor.loadFactoryPreset (index);
+
+        PresetLevel level;
+        juce::AudioBuffer<float> buffer (2, blockSize);
+        double sumSq = 0.0;
+        const int blocks = (int) (1.5 * testSampleRate) / blockSize;
+        std::vector<double> blockSumSq;
+        for (int b = 0; b < blocks; ++b)
+        {
+            juce::MidiBuffer midi;
+            if (b == 0)
+                for (int note : { 48, 55, 60 }) // a chord, so pads and leads get a fair test
+                    midi.addEvent (juce::MidiMessage::noteOn (1, note, 0.8f), 0);
+            buffer.clear();
+            processor.processBlock (buffer, midi);
+            double thisBlock = 0.0;
+            for (int c = 0; c < 2; ++c)
+                for (int s = 0; s < blockSize; ++s)
+                {
+                    const float v = buffer.getSample (c, s);
+                    level.finite = level.finite && std::isfinite (v);
+                    level.peak = std::max (level.peak, std::abs (v));
+                    thisBlock += (double) v * v;
+                }
+            sumSq += thisBlock;
+            blockSumSq.push_back (thisBlock);
+        }
+        level.rms = std::sqrt (sumSq / (2.0 * blocks * blockSize));
+
+        const int window = juce::jmax (1, (int) (0.3 * testSampleRate) / blockSize);
+        for (int start = 0; start + window <= blocks; ++start)
+        {
+            double windowSumSq = 0.0;
+            for (int b = start; b < start + window; ++b)
+                windowSumSq += blockSumSq[(size_t) b];
+            level.loudest = std::max (level.loudest, std::sqrt (windowSumSq / (2.0 * window * blockSize)));
+        }
+        level.loadedName = processor.getPresetName();
+        return level;
+    }
+
     int failures = 0;
 
     void check (bool ok, const juce::String& what)
@@ -302,6 +352,17 @@ int main (int argc, char** argv)
 
     if (argc == 3 && juce::String (argv[1]) == "--snapshot")
         return saveWavesSnapshot (juce::File (juce::String (argv[2])));
+
+    // LapizTests.exe --presets: prints how loud each built-in preset plays a chord, for balancing them.
+    if (argc == 2 && juce::String (argv[1]) == "--presets")
+    {
+        for (int i = 0; i < (int) FactoryPresets::list().size(); ++i)
+        {
+            const auto level = playPresetChord (i);
+            std::cout << FactoryPresets::list()[(size_t) i].name << "\t" << level.peak << "\t" << level.rms << "\t" << level.loudest << std::endl;
+        }
+        return 0;
+    }
 
     // ---- Basic sound and filter ----
     const auto open = render ({});
@@ -639,41 +700,19 @@ int main (int argc, char** argv)
         bool allPlay = true;
         for (int i = 0; i < (int) FactoryPresets::list().size(); ++i)
         {
-            LapizAudioProcessor processor;
-            processor.setPlayConfigDetails (0, 2, testSampleRate, blockSize);
-            processor.prepareToPlay (testSampleRate, blockSize);
-            processor.loadFactoryPreset (i);
-
-            juce::AudioBuffer<float> buffer (2, blockSize);
-            float peak = 0.0f;
-            double sumSq = 0.0;
-            bool finite = true;
-            const int blocks = (int) (1.5 * testSampleRate) / blockSize;
-            for (int b = 0; b < blocks; ++b)
-            {
-                juce::MidiBuffer midi;
-                if (b == 0)
-                    for (int note : { 48, 55, 60 }) // a chord, so pads and leads get a fair test
-                        midi.addEvent (juce::MidiMessage::noteOn (1, note, 0.8f), 0);
-                buffer.clear();
-                processor.processBlock (buffer, midi);
-                for (int c = 0; c < 2; ++c)
-                    for (int s = 0; s < blockSize; ++s)
-                    {
-                        const float v = buffer.getSample (c, s);
-                        finite = finite && std::isfinite (v);
-                        peak = std::max (peak, std::abs (v));
-                        sumSq += (double) v * v;
-                    }
-            }
-            const double rms = std::sqrt (sumSq / (2.0 * blocks * blockSize));
+            const auto level = playPresetChord (i);
             const auto& preset = FactoryPresets::list()[(size_t) i];
-            const bool ok = finite && rms > 0.005 && peak < 1.0f && processor.getPresetName() == preset.name;
+            const bool ok = level.finite && level.rms > 0.005 && level.peak < 1.0f && level.loadedName == preset.name;
             if (! ok)
-                std::cout << "      preset " << preset.name << ": peak " << peak << ", rms " << rms << std::endl;
+                std::cout << "      preset " << preset.name << ": peak " << level.peak << ", rms " << level.rms << std::endl;
             allPlay = allPlay && ok;
         }
         check (allPlay, "every built-in preset loads and plays a chord that is audible and below full scale");
+
+        juce::StringArray names;
+        for (auto& preset : FactoryPresets::list())
+            names.addIfNotAlreadyThere (preset.name);
+        check (names.size() == (int) FactoryPresets::list().size(), "every built-in preset has its own name");
 
         const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("LapizTestPreset.lapiz");
         {
