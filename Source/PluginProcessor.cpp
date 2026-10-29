@@ -34,6 +34,7 @@ LapizAudioProcessor::LapizAudioProcessor()
     voiceParams.unisonVoices = parameters.getRawParameterValue ("unisonVoices");
     voiceParams.unisonDetune = parameters.getRawParameterValue ("unisonDetune");
     voiceParams.unisonWidth  = parameters.getRawParameterValue ("unisonWidth");
+    voiceParams.analog = parameters.getRawParameterValue ("analog");
     voiceParams.table = &blockTable;
 
     for (int i = 0; i < numVoices; ++i)
@@ -75,6 +76,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout LapizAudioProcessor::createP
 
     layout.add (std::make_unique<Param> (juce::ParameterID { "resonance", 1 }, "Resonance",
                                          Range (0.0f, 1.0f), 0.0f));
+
+    // Analog: drift, note-to-note differences and warmth (see Analog.h). 0 is the clean digital sound.
+    layout.add (std::make_unique<Param> (juce::ParameterID { "analog", 1 }, "Analog", Range (0.0f, 1.0f), 0.0f));
 
     layout.add (std::make_unique<Param> (juce::ParameterID { "volume", 1 }, "Volume",
                                          Range (0.0f, 1.0f), 0.7f));
@@ -153,6 +157,7 @@ void LapizAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     synth.setCurrentPlaybackSampleRate (sampleRate);
     effects.prepare (sampleRate, samplesPerBlock);
+    analogSaturator.prepare (sampleRate, samplesPerBlock);
     setLatencySamples (effects.getLatencySamples());
 }
 
@@ -231,6 +236,7 @@ void LapizAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     advanceLfoClock (buffer.getNumSamples());
     synth.renderNextBlock (buffer, midi, 0, buffer.getNumSamples());
     publishLiveState();
+    analogSaturator.process (buffer, parameters.getRawParameterValue ("analog")->load());
     effects.process (buffer, effectParams, bpm);
     buffer.applyGain (parameters.getRawParameterValue ("volume")->load());
 

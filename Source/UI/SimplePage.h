@@ -13,7 +13,7 @@
 
 // The front page: everything a beginner needs, in three panels read left to right.
 //   1. SOUND - which wave you start from, how much it wobbles (LFO), and how loud
-//   2. TONE  - the filter (how bright or dark it is)
+//   2. TONE  - the filter (how bright or dark it is) and how analog it sounds
 //   3. SHAPE - the volume envelope (how a note starts and ends)
 class SimplePage : public juce::Component
 {
@@ -38,7 +38,7 @@ private:
     // Panel 2
     FilterView filterView;
     juce::TextButton typeButtons[3];
-    LabeledKnob cutoff, resonance;
+    LabeledKnob cutoff, resonance, analog;
     std::unique_ptr<juce::ParameterAttachment> typeAttachment;
 
     // Panel 3

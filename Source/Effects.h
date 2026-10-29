@@ -157,7 +157,8 @@ namespace Effects
                     if (readPos < 0.0f)
                         readPos += (float) size;
 
-                    const int i0 = (int) readPos;
+                    // A position just below 0 plus the size can round up to exactly the size, one past the end.
+                    const int i0 = juce::jmin ((int) readPos, size - 1);
                     const int i1 = (i0 + 1) % size;
                     const float frac = readPos - (float) i0;
                     const float wet = line[(size_t) i0] + frac * (line[(size_t) i1] - line[(size_t) i0]);
@@ -198,7 +199,7 @@ namespace Effects
                 if (readPos < 0.0f)
                     readPos += (float) size;
 
-                const int i0 = (int) readPos;
+                const int i0 = juce::jmin ((int) readPos, size - 1); // can round up to exactly the size, as in the chorus
                 const int i1 = (i0 + 1) % size;
                 const float frac = readPos - (float) i0;
                 const float echoL = delayLines[0][(size_t) i0] + frac * (delayLines[0][(size_t) i1] - delayLines[0][(size_t) i0]);

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_dsp/juce_dsp.h>
+#include "Analog.h"
 #include "FilterMath.h"
 #include "Lfo.h"
 #include "Wavetable.h"
@@ -47,13 +48,16 @@ struct VoiceParams
     std::atomic<float>* unisonDetune = nullptr;
     std::atomic<float>* unisonWidth  = nullptr;
 
+    std::atomic<float>* analog = nullptr;
+
     // The wavetable to play during the current block (set by the processor before each block).
     const Wavetable* const* table = nullptr;
 };
 
 // One voice plays one note. The synth owns several, so chords can play.
 // Signal path: wavetable oscillator (with up to 8 unison copies) -> filter -> volume envelope.
-// The filter envelope and the LFO move the controls while the note plays.
+// The filter envelope and the LFO move the controls while the note plays, and the Analog knob
+// adds drift, small differences between notes and filter warmth (see Analog.h).
 class LapizVoice : public juce::SynthesiserVoice
 {
 public:
@@ -73,7 +77,7 @@ public:
 
         if (newRate > 0.0)
         {
-            filter.prepare ({ newRate, 512u, 2u }); // left and right, for unison copies spread across the stereo field
+            filter.prepare (newRate); // left and right, for unison copies spread across the stereo field
             cutoffSmoother.reset (newRate, 0.02); // 20 ms glide so moving the knob doesn't crackle
         }
     }
@@ -88,12 +92,25 @@ public:
         randomSeed = ++noteCounter;
         startOrder = ++startCounter;
 
-        // The first copy starts at the beginning of the wave. The other unison copies start at
+        // The first copy starts at the beginning of the wave (unless Analog is up, below). The other unison copies start at
         // random points, so they don't all line up and sound like one loud copy at the start.
         juce::Random random ((juce::int64) randomSeed);
         phases[0] = 0.0f;
         for (int k = 1; k < maxUnison; ++k)
             phases[(size_t) k] = random.nextFloat();
+
+        // Analog: this note's own small differences, each from -1 to 1. They are scaled by the
+        // Analog knob while the note plays, so turning the knob is heard straight away.
+        analogRandom.setSeed ((juce::int64) randomSeed * 7919);
+        notePitch = analogRandom.nextFloat() * 2.0f - 1.0f;
+        noteBrightness = analogRandom.nextFloat() * 2.0f - 1.0f;
+        noteLevel = analogRandom.nextFloat() * 2.0f - 1.0f;
+        noteTiming = analogRandom.nextFloat() * 2.0f - 1.0f;
+        for (auto& drift : drifts)
+            drift.reset (analogRandom);
+
+        // A real oscillator is already running when you press a key, so the wave starts anywhere.
+        phases[0] = analogRandom.nextFloat() * params.analog->load();
 
         adsr.setSampleRate (getSampleRate());
         filterEnvelope.setSampleRate (getSampleRate());
@@ -141,6 +158,8 @@ public:
         const bool restartLfo = params.lfoRetrigger->load() > 0.5f;
         const auto& clock = *params.lfoClock;
         const double sampleRate = getSampleRate();
+        const float analog = params.analog->load();
+        filter.setWarmth (analog);
 
         // Unison: each copy is detuned and panned by its place in the spread (-1 = far left and flat,
         // +1 = far right and sharp). Equal-power panning keeps a centred copy at full level.
@@ -159,8 +178,24 @@ public:
             panRight[(size_t) k] = std::sin (angle) * juce::MathConstants<float>::sqrt2 * copiesGain;
         }
 
+        // Analog: each copy drifts on its own, on top of this note's fixed pitch offset.
+        // The drift moves slowly, so updating it once per block is smooth enough.
+        if (analog > 0.0f)
+        {
+            const float blockSeconds = (float) (numSamples / sampleRate);
+            for (int k = 0; k < copies; ++k)
+            {
+                const float cents = analog * (Analog::maxDriftCents * drifts[(size_t) k].advance (blockSeconds, analogRandom)
+                                              + Analog::maxNoteCents * notePitch);
+                ratio[(size_t) k] *= std::exp2 (cents / 1200.0f);
+            }
+        }
+
         // The sharpest copy decides how many harmonics are safe, so none of them alias.
-        const double highestRatio = copies > 1 ? std::exp2 ((double) detuneCents / 1200.0) : 1.0;
+        const double highestRatio = (copies > 1 ? std::exp2 ((double) detuneCents / 1200.0) : 1.0)
+                                  * std::exp2 ((double) Analog::maxPitchOffsetCents (analog) / 1200.0);
+        const float noteOctaves = analog * Analog::maxNoteOctaves * noteBrightness;
+        const float noteGain = 1.0f + analog * Analog::maxNoteLevel * noteLevel;
         const int noteTableLevel = Wavetable::levelForFrequency (noteFrequency * highestRatio, sampleRate);
         const float phaseIncrement = (float) (noteFrequency / sampleRate);
 
@@ -175,7 +210,7 @@ public:
                                                : 0.0f;
 
             // Filter: the knob setting, moved by the filter envelope and (if chosen) the LFO, in octaves.
-            float octaves = filterEnvelope.getNextSample() * envAmount * Lfo::cutoffOctaves;
+            float octaves = filterEnvelope.getNextSample() * envAmount * Lfo::cutoffOctaves + noteOctaves;
             if (lfoTarget == Lfo::cutoff)
                 octaves += lfo * Lfo::cutoffOctaves;
 
@@ -201,7 +236,7 @@ public:
                 tableLevel = Wavetable::levelForFrequency (frequency * highestRatio, sampleRate);
             }
 
-            float gain = level * 0.3f;
+            float gain = level * 0.3f * noteGain;
             if (lfoTarget == Lfo::volume)
                 gain *= 1.0f - 0.5f * (lfoAmount - lfo); // dips down from full volume, never above it
 
@@ -250,10 +285,12 @@ public:
 private:
     void updateEnvelopes()
     {
-        adsr.setParameters ({ params.attack->load(), params.decay->load(),
-                              params.sustain->load(), params.release->load() });
-        filterEnvelope.setParameters ({ params.fenvAttack->load(), params.fenvDecay->load(),
-                                        params.fenvSustain->load(), params.fenvRelease->load() });
+        // Analog: each note's envelopes run a little faster or slower.
+        const float stretch = 1.0f + params.analog->load() * Analog::maxNoteTiming * noteTiming;
+        adsr.setParameters ({ params.attack->load() * stretch, params.decay->load() * stretch,
+                              params.sustain->load(), params.release->load() * stretch });
+        filterEnvelope.setParameters ({ params.fenvAttack->load() * stretch, params.fenvDecay->load() * stretch,
+                                        params.fenvSustain->load(), params.fenvRelease->load() * stretch });
     }
 
     // Reads the filter knobs. jumpToTarget skips the glide (used when a note starts).
@@ -263,9 +300,7 @@ private:
         const float q = FilterMath::resonanceToQ (params.resonance->load());
         const float cutoff = params.cutoff->load();
 
-        filter.setType (type == FilterMath::highPass ? juce::dsp::StateVariableTPTFilterType::highpass
-                      : type == FilterMath::bandPass ? juce::dsp::StateVariableTPTFilterType::bandpass
-                                                     : juce::dsp::StateVariableTPTFilterType::lowpass);
+        filter.setType (type);
         filter.setResonance (q);
 
         // JUCE's band-pass gets louder as Q rises; scaling by 1/Q keeps its peak at 0 dB.
@@ -283,7 +318,7 @@ private:
 
     VoiceParams params;
     juce::ADSR adsr, filterEnvelope;
-    juce::dsp::StateVariableTPTFilter<float> filter;
+    Analog::WarmFilter filter;
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Multiplicative> cutoffSmoother { 20000.0f };
 
     double noteFrequency = 440.0;
@@ -296,4 +331,9 @@ private:
     std::uint64_t startOrder = 0;
     float currentCutoffHz = -1.0f;
     float currentPosition = 0.0f;
+
+    // Analog: this note's differences (-1..1 each) and one slow drift per unison copy.
+    juce::Random analogRandom;
+    float notePitch = 0.0f, noteBrightness = 0.0f, noteLevel = 0.0f, noteTiming = 0.0f;
+    std::array<Analog::Drift, maxUnison> drifts;
 };

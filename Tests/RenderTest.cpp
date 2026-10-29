@@ -354,12 +354,23 @@ int main (int argc, char** argv)
         return saveWavesSnapshot (juce::File (juce::String (argv[2])));
 
     // LapizTests.exe --presets: prints how loud each built-in preset plays a chord, for balancing them.
+    // With Analog up every note starts differently, so each chord is played 8 times: the highest peak
+    // and the average of the other measurements are printed.
     if (argc == 2 && juce::String (argv[1]) == "--presets")
     {
+        constexpr int tries = 8;
         for (int i = 0; i < (int) FactoryPresets::list().size(); ++i)
         {
-            const auto level = playPresetChord (i);
-            std::cout << FactoryPresets::list()[(size_t) i].name << "\t" << level.peak << "\t" << level.rms << "\t" << level.loudest << std::endl;
+            float peak = 0.0f;
+            double rms = 0.0, loudest = 0.0;
+            for (int t = 0; t < tries; ++t)
+            {
+                const auto level = playPresetChord (i);
+                peak = std::max (peak, level.peak);
+                rms += level.rms / tries;
+                loudest += level.loudest / tries;
+            }
+            std::cout << FactoryPresets::list()[(size_t) i].name << "\t" << peak << "\t" << rms << "\t" << loudest << std::endl;
         }
         return 0;
     }
@@ -441,6 +452,28 @@ int main (int argc, char** argv)
               << 10.0 * std::log10 (std::max (lapizFraction, 1.0e-12)) << " dB" << std::endl;
     check (naiveFraction > 1.0e-3, "the measurement detects aliasing in a naive saw (above -30 dB)");
     check (lapizFraction < 1.0e-5, "LAPiZ's high note has almost no energy between the harmonics (below -50 dB)");
+
+    // The Analog saturation adds harmonics, so check it doesn't add much aliasing to the same high note.
+    // (Fed straight from a clean saw, because drift would move the pitch the measurement relies on.)
+    {
+        juce::AudioBuffer<float> saw (2, (int) lapizHigh.size());
+        for (int i = 0; i < saw.getNumSamples(); ++i)
+        {
+            float v = 0.0f;
+            for (int k = 1; (double) k * highFreq < testSampleRate / 2.0; ++k)
+                v -= std::sin ((float) (juce::MathConstants<double>::twoPi * k * highFreq * i / testSampleRate)) / (float) k;
+            saw.setSample (0, i, 0.5f * v);
+            saw.setSample (1, i, 0.5f * v);
+        }
+        Analog::Saturator saturator;
+        saturator.prepare (testSampleRate, saw.getNumSamples());
+        saturator.process (saw, 1.0f);
+        const std::vector<float> saturated (saw.getReadPointer (0), saw.getReadPointer (0) + saw.getNumSamples());
+        const double saturatedFraction = nonHarmonicFraction (saturated, analysisStart, highFreq);
+        std::cout << "note " << noteHigh << " through Analog saturation: energy between the harmonics "
+                  << 10.0 * std::log10 (std::max (saturatedFraction, 1.0e-12)) << " dB" << std::endl;
+        check (saturatedFraction < 1.0e-4, "Analog saturation adds very little aliasing to a high note (below -40 dB)");
+    }
 
     // ---- Filter envelope ----
     {
@@ -693,6 +726,137 @@ int main (int argc, char** argv)
                                                 { "reverbOn", 1.0f }, { "reverbMix", 1.0f } }, 2.0f);
         check (allFinite (everything.first) && allFinite (everything.second) && peakOf (everything.first) < 2.0f,
                "all effects at once, turned up, stay finite and don't blow up");
+    }
+
+    // Analog
+    {
+        // With warmth at 0, LAPiZ's own filter must sound exactly like JUCE's, which it replaced.
+        float worstDifference = 0.0f;
+        juce::Random noise (42);
+        for (int type = 0; type < 3; ++type)
+        {
+            Analog::WarmFilter ours;
+            ours.prepare (testSampleRate);
+            ours.setType (type);
+            ours.setResonance (3.0f);
+            ours.setCutoffFrequency (1200.0f);
+
+            juce::dsp::StateVariableTPTFilter<float> theirs;
+            theirs.prepare ({ testSampleRate, (juce::uint32) blockSize, 1u });
+            theirs.setType (type == 1 ? juce::dsp::StateVariableTPTFilterType::highpass
+                          : type == 2 ? juce::dsp::StateVariableTPTFilterType::bandpass
+                                      : juce::dsp::StateVariableTPTFilterType::lowpass);
+            theirs.setResonance (3.0f);
+            theirs.setCutoffFrequency (1200.0f);
+
+            for (int i = 0; i < 20000; ++i)
+            {
+                const float x = noise.nextFloat() * 2.0f - 1.0f;
+                worstDifference = std::max (worstDifference, std::abs (ours.processSample (0, x) - theirs.processSample (0, x)));
+            }
+        }
+        check (worstDifference < 1.0e-5f, "with Analog at 0 the filter is the same as before");
+
+        // Plays the same note twice in one processor and says how different the two starts are.
+        auto differenceBetweenTwoNotes = [] (float analog)
+        {
+            LapizAudioProcessor processor;
+            processor.setPlayConfigDetails (0, 2, testSampleRate, blockSize);
+            processor.prepareToPlay (testSampleRate, blockSize);
+            setParam (processor, "position", 2.0f / 3.0f);
+            setParam (processor, "cutoff", 3000.0f);
+            setParam (processor, "release", 0.01f);
+            setParam (processor, "analog", analog);
+
+            std::vector<float> notes[2];
+            juce::AudioBuffer<float> buffer (2, blockSize);
+            for (auto& samples : notes)
+            {
+                const int blocks = (int) (0.6 * testSampleRate) / blockSize;
+                for (int b = 0; b < blocks; ++b)
+                {
+                    juce::MidiBuffer midi;
+                    if (b == 0)
+                        midi.addEvent (juce::MidiMessage::noteOn (1, noteA3, 0.8f), 0);
+                    if (b == blocks / 2)
+                        midi.addEvent (juce::MidiMessage::noteOff (1, noteA3), 0);
+                    buffer.clear();
+                    processor.processBlock (buffer, midi);
+                    for (int i = 0; i < blockSize && b < blocks / 2; ++i)
+                        samples.push_back (buffer.getSample (0, i));
+                }
+            }
+
+            float difference = 0.0f;
+            for (size_t i = 0; i < std::min (notes[0].size(), notes[1].size()); ++i)
+                difference = std::max (difference, std::abs (notes[0][i] - notes[1][i]));
+            return difference;
+        };
+        const float sameAtZero = differenceBetweenTwoNotes (0.0f);
+        const float differentAtFull = differenceBetweenTwoNotes (1.0f);
+        std::cout << "same note twice:  Analog 0 difference " << sameAtZero << ", Analog 100 % difference " << differentAtFull << std::endl;
+        check (sameAtZero < 1.0e-6f && differentAtFull > 0.05f, "with Analog up, every note is a little different; at 0 they are identical");
+
+        // Drift: the pitch of a held sine wave wanders over time.
+        auto pitchSpreadCents = [] (float analog)
+        {
+            const auto samples = renderSamples ({ { "position", 0.0f }, { "analog", analog } }, noteA3, 4.5f, 0.1f);
+            auto frequencyIn = [&] (double fromSeconds)
+            {
+                // Counts rising zero crossings across one second, measured to a fraction of a sample.
+                const size_t start = (size_t) (fromSeconds * testSampleRate), end = start + (size_t) testSampleRate;
+                double first = -1.0, last = -1.0;
+                int crossings = 0;
+                for (size_t i = start + 1; i < end; ++i)
+                    if (samples[i - 1] < 0.0f && samples[i] >= 0.0f)
+                    {
+                        const double t = (double) (i - 1) + samples[i - 1] / (samples[i - 1] - samples[i]);
+                        if (first < 0.0) first = t;
+                        last = t;
+                        ++crossings;
+                    }
+                return (crossings - 1) * testSampleRate / (last - first);
+            };
+            double lowest = 1.0e9, highest = 0.0;
+            for (double from : { 0.3, 1.3, 2.3, 3.3 })
+            {
+                const double f = frequencyIn (from);
+                lowest = std::min (lowest, f);
+                highest = std::max (highest, f);
+            }
+            return 1200.0 * std::log2 (highest / lowest);
+        };
+        const double steadyCents = pitchSpreadCents (0.0f), driftCents = pitchSpreadCents (1.0f);
+        std::cout << "pitch over 4 s:  Analog 0 moves " << steadyCents << " cents, Analog 100 % moves " << driftCents << " cents" << std::endl;
+        check (steadyCents < 0.05 && driftCents > 1.0 && driftCents < 2.0 * Analog::maxDriftCents,
+               "with Analog up the pitch drifts a few cents; at 0 it stays put");
+
+        // Warm filter: strong Emphasis gets rounded off instead of whistling louder.
+        const auto clean = render ({ { "cutoff", 1000.0f }, { "resonance", 1.0f } });
+        const auto warm = render ({ { "cutoff", 1000.0f }, { "resonance", 1.0f }, { "analog", 1.0f } });
+        std::cout << "max emphasis:  Analog 0 peak " << clean.peak << " rms " << clean.rms << ", Analog 100 % peak " << warm.peak << " rms " << warm.rms << std::endl;
+        check (warm.allFinite && warm.peak < clean.peak && warm.rms > 0.5 * clean.rms,
+               "the warm filter tames the peaks of maximum emphasis without losing its level");
+
+        // How much Analog changes the level, from no emphasis to full.
+        for (float resonance : { 0.0f, 0.5f, 1.0f })
+        {
+            const auto a0 = render ({ { "cutoff", 1000.0f }, { "resonance", resonance } });
+            const auto a1 = render ({ { "cutoff", 1000.0f }, { "resonance", resonance }, { "analog", 1.0f } });
+            std::cout << "      emphasis " << resonance << ": Analog 100 % changes the level by "
+                      << juce::Decibels::gainToDecibels (a1.rms / a0.rms) << " dB" << std::endl;
+        }
+
+        // The lopsided saturation must not leave an offset (DC) in the output.
+        const auto held = renderSamples ({ { "sustain", 1.0f }, { "analog", 1.0f } }, noteA3, 1.0f, 0.1f);
+        double sum = 0.0, sumSq = 0.0;
+        for (size_t i = (size_t) (0.5 * testSampleRate); i < (size_t) testSampleRate; ++i)
+        {
+            sum += held[i];
+            sumSq += (double) held[i] * held[i];
+        }
+        const double count = 0.5 * testSampleRate;
+        check (std::abs (sum / count) < 0.01 * std::sqrt (sumSq / count), "Analog saturation adds no offset (DC)");
     }
 
     // Presets

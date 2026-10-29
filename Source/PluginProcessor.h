@@ -122,6 +122,7 @@ private:
     LiveState live;
 
     Effects::Chain effects;
+    Analog::Saturator analogSaturator; // the Analog knob's warmth on the whole synth, before the effects
     Effects::Params effectParams;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LapizAudioProcessor)

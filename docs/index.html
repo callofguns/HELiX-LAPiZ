@@ -154,7 +154,7 @@ footer .wrap { display: grid; gap: 8px; }
       <div>
         <h1 class="wordmark" aria-label="LAPiZ">LAP<span class="i">i</span>Z</h1>
         <p class="tagline">A free wavetable synth for FL Studio that tells you what every knob does.</p>
-        <p class="facts">VST3 for Windows. Open source under the AGPLv3. Version 1.0.</p>
+        <p class="facts">VST3 for Windows. Open source under the AGPLv3. Version 1.1.</p>
         <div class="actions">
           <a class="button" href="https://github.com/callofguns/HELiX-LAPiZ">Get LAPiZ on GitHub</a>
           <a class="quiet-link" href="#install">How to install</a>
@@ -184,6 +184,7 @@ footer .wrap { display: grid; gap: 8px; }
         <div><dt>Wave Shape</dt><dd>Wavetable Position</dd></div>
         <div><dt>Brightness</dt><dd>Filter Cutoff</dd></div>
         <div><dt>Emphasis</dt><dd>Resonance</dd></div>
+        <div><dt>Analog</dt><dd>Drift &amp; warmth</dd></div>
         <div><dt>Fade In</dt><dd>Attack</dd></div>
         <div><dt>Drop</dt><dd>Decay</dd></div>
         <div><dt>Hold Level</dt><dd>Sustain</dd></div>
@@ -247,7 +248,7 @@ footer .wrap { display: grid; gap: 8px; }
         <p class="lede">LAPiZ runs on 64-bit Windows in FL Studio or any other music software that loads VST3 plugins.</p>
       </div>
       <ol class="steps">
-        <li><p>Download <b>LAPiZ-1.0.0-setup.exe</b> from the <a href="https://github.com/callofguns/HELiX-LAPiZ/releases">Releases page on GitHub</a>.</p></li>
+        <li><p>Download <b>LAPiZ-1.1.0-setup.exe</b> from the <a href="https://github.com/callofguns/HELiX-LAPiZ/releases">Releases page on GitHub</a>.</p></li>
         <li><p>Run it. Windows may warn that the app is from an unknown publisher, because LAPiZ isn't code-signed yet. Click <b>More info</b>, then <b>Run anyway</b>.</p></li>
         <li><p>In FL Studio, open <b>Options &gt; Manage plugins</b> and click <b>Find installed plugins</b>.</p></li>
         <li><p>Find LAPiZ in the list (made by HELiX) and click its star. It now shows up in the plugin browser and the Channel Rack's + menu.</p></li>
@@ -369,8 +370,8 @@ footer .wrap { display: grid; gap: 8px; }
   const tabs = {
     simple: {
       img: "images/simple.png",
-      text: "Three panels, left to right, in the order the sound flows: pick a raw tone, make it darker or brighter, and set how each note starts and ends.",
-      points: ["Wavetable picker with a stacked view of every wave", "Low-pass, high-pass and band-pass filter with a live curve", "Volume envelope you can see change as you turn it"]
+      text: "Three panels, left to right, in the order the sound flows: pick a raw tone, make it darker, brighter or warmer, and set how each note starts and ends.",
+      points: ["Wavetable picker with a stacked view of every wave", "Low-pass, high-pass and band-pass filter with a live curve", "An Analog knob for the drift and warmth of old hardware synths", "Volume envelope you can see change as you turn it"]
     },
     waves: {
       img: "images/waves.png",

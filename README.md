@@ -3,7 +3,7 @@
 A wavetable synth by HELiX for FL Studio (VST3, Windows), built to be powerful but easy for beginners:
 plain-English controls, hover help on everything and live visual feedback.
 
-- **Simple** tab: pick a wavetable, shape the tone with a filter, and set how notes start and end.
+- **Simple** tab: pick a wavetable, shape the tone with a filter, add analog drift and warmth with one knob, and set how notes start and end.
 - **Waves** tab: draw your own wavetables with the mouse, blend between keyframes, save them as .wav.
 - **Advanced** tab: filter envelope, an LFO ("Wobble") and unison ("Thickness": up to 8 detuned copies per note).
 - **Effects** tab: distortion, chorus, ping-pong delay and reverb.

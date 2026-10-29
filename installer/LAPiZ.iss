@@ -6,7 +6,7 @@
 ; Keep AppVersion in step with Source/Version.h and the VERSION in CMakeLists.txt.
 ; Never change AppId: Windows uses it to recognise an older LAPiZ when updating or uninstalling.
 
-#define AppVersion "1.0.0"
+#define AppVersion "1.1.0"
 #define Artefacts "..\build\Lapiz_artefacts\Release"
 
 [Setup]

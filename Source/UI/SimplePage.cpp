@@ -11,7 +11,7 @@ namespace
 
     const PanelInfo panelInfo[3] = {
         { "1", "Sound", "Pick the raw tone",             Theme::Module::sound },
-        { "2", "Tone",  "Make it darker or brighter",    Theme::Module::tone },
+        { "2", "Tone",  "Darker, brighter or warmer",    Theme::Module::tone },
         { "3", "Shape", "How each note starts and ends", Theme::Module::shape }
     };
 }
@@ -25,6 +25,7 @@ SimplePage::SimplePage (LapizAudioProcessor& processor, HelpRegistrar registerHe
       filterView (processor.getState(), [&processor] { return processor.getSampleRate(); }, processor.getLive().cutoff),
       cutoff (processor.getState(), "cutoff", "Brightness", "Filter Cutoff", Theme::Module::tone, Format::hertz),
       resonance (processor.getState(), "resonance", "Emphasis", "Resonance", Theme::Module::tone, Format::percent),
+      analog (processor.getState(), "analog", "Analog", "Drift & warmth", Theme::Module::tone, Format::percent),
       envelopeView (processor.getState(), {}, Theme::Module::shape),
       attack (processor.getState(), "attack", "Fade In", "Attack", Theme::Module::shape, Format::seconds),
       decay (processor.getState(), "decay", "Drop", "Decay", Theme::Module::shape, Format::seconds),
@@ -33,7 +34,7 @@ SimplePage::SimplePage (LapizAudioProcessor& processor, HelpRegistrar registerHe
 {
     for (juce::Component* c : { (juce::Component*) &picker, (juce::Component*) &waveView, (juce::Component*) &position, (juce::Component*) &wobble,
                                 (juce::Component*) &volume,
-                                (juce::Component*) &filterView, (juce::Component*) &cutoff, (juce::Component*) &resonance,
+                                (juce::Component*) &filterView, (juce::Component*) &cutoff, (juce::Component*) &resonance, (juce::Component*) &analog,
                                 (juce::Component*) &envelopeView, (juce::Component*) &attack, (juce::Component*) &decay,
                                 (juce::Component*) &sustain, (juce::Component*) &release })
         addAndMakeVisible (c);
@@ -94,6 +95,8 @@ SimplePage::SimplePage (LapizAudioProcessor& processor, HelpRegistrar registerHe
     registerHelp (filterView, "This curve shows which pitches the filter lets through. Left is bass, right is treble. Higher on the curve means more of that sound gets through.");
     helpForKnob (cutoff, "Brightness (Filter Cutoff): where the filter starts to cut. With Low-pass, turn it down for a darker, muffled sound and up for a bright, open one. Double-click to reset.");
     helpForKnob (resonance, "Emphasis (Resonance): boosts the sound right at the Brightness point. A little adds character; a lot makes it whistle or sound vocal. Double-click to reset.");
+    helpForKnob (analog, "Analog: makes LAPiZ sound like an old hardware synth. Notes drift slightly out of tune, every note is a little different, "
+                         "and the filter and output get warmer and rounder. 0 is clean and digital. Double-click to reset.");
 
     registerHelp (envelopeView, "This shows how the loudness of a note changes over time: from the moment you press a key, to the moment you let go.");
     helpForKnob (attack, "Fade In (Attack): how long a note takes to reach full volume after you press a key. Short is punchy, long is a slow swell. Double-click to reset.");
@@ -172,7 +175,7 @@ void SimplePage::resized()
         auto inner = panels[1].reduced (14, 0);
         inner.removeFromTop (panelTitleHeight);
         inner.removeFromBottom (10);
-        knobRow (inner.removeFromBottom (knobRowHeight), { &cutoff, &resonance });
+        knobRow (inner.removeFromBottom (knobRowHeight), { &cutoff, &resonance, &analog });
         inner.removeFromBottom (10);
 
         auto buttons = inner.removeFromBottom (30);
