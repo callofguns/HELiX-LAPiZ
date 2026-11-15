@@ -1,5 +1,6 @@
 #include "PluginEditor.h"
 #include "UI/Settings.h"
+#include "UpdateLogic.h"
 #include "Version.h"
 
 namespace
@@ -40,7 +41,8 @@ LapizAudioProcessorEditor::LapizAudioProcessorEditor (LapizAudioProcessor& p)
 
     settingsButton.onClick = [this] { showSettingsMenu(); };
     addAndMakeVisible (settingsButton);
-    registerHelp (settingsButton, "Settings: switch between the Dark and Daylight look. Your choice is remembered for every LAPiZ you open.");
+    registerHelp (settingsButton, "Settings: switch between the Dark and Daylight look, and choose whether LAPiZ updates itself. "
+                                  "Your choices are remembered for every LAPiZ you open.");
 
     addChildComponent (simplePage);
     addChildComponent (wavesPage);
@@ -53,21 +55,34 @@ LapizAudioProcessorEditor::LapizAudioProcessorEditor (LapizAudioProcessor& p)
 
     setResizable (false, false);
     setSize (900, 580);
+
+    updater->addChangeListener (this);
+    updater->checkAutomatically();
 }
 
 LapizAudioProcessorEditor::~LapizAudioProcessorEditor()
 {
+    updater->removeChangeListener (this);
     setLookAndFeel (nullptr);
 }
 
 void LapizAudioProcessorEditor::showSettingsMenu()
 {
     const bool dark = Theme::currentLook() == Theme::Look::dark;
+    const bool updates = Updater::isSupported();
+    const auto status = updater->getStatus();
 
     juce::PopupMenu menu;
     menu.addSectionHeader ("Look");
     menu.addItem (1, "Dark", true, dark);
     menu.addItem (2, "Daylight", true, ! dark);
+
+    menu.addSectionHeader (updates ? "Updates" : "Updates (off in this build)");
+    menu.addItem (3, "Update automatically", updates, updates && Settings::loadAutoUpdate());
+    menu.addItem (4, status.state == Updater::State::checking ? "Checking for updates..." : "Check for updates now",
+                  updates && status.state != Updater::State::checking);
+    if (status.state == Updater::State::manual)
+        menu.addItem (5, "Download LAPiZ " + status.version + " from GitHub");
 
     juce::Component::SafePointer<LapizAudioProcessorEditor> safeThis (this);
     menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&settingsButton),
@@ -75,8 +90,38 @@ void LapizAudioProcessorEditor::showSettingsMenu()
                         {
                             if (safeThis == nullptr || result == 0)
                                 return;
-                            safeThis->setLook (result == 2 ? Theme::Look::daylight : Theme::Look::dark);
+
+                            if (result == 1 || result == 2)
+                                safeThis->setLook (result == 2 ? Theme::Look::daylight : Theme::Look::dark);
+                            else if (result == 3)
+                                Settings::saveAutoUpdate (! Settings::loadAutoUpdate());
+                            else if (result == 4)
+                                safeThis->updater->checkNow();
+                            else if (result == 5)
+                                juce::URL (UpdateLogic::releasesPage).launchInDefaultBrowser();
                         });
+}
+
+void LapizAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster*)
+{
+    repaint (0, getHeight() - footerHeight, getWidth(), footerHeight);
+}
+
+juce::String LapizAudioProcessorEditor::updateText() const
+{
+    const auto s = updater->getStatus();
+    switch (s.state)
+    {
+        case Updater::State::installed:
+            return "Updated to v" + s.version + (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone
+                                                     ? ". Restart LAPiZ to use it." : ". Restart FL Studio to use it.");
+        case Updater::State::manual:    return "LAPiZ v" + s.version + " is out: get it from the settings menu.";
+        case Updater::State::checking:  return s.userAsked ? "Checking for updates..." : juce::String();
+        case Updater::State::upToDate:  return s.userAsked ? "LAPiZ " + juce::String (versionTag) + " is up to date." : juce::String();
+        case Updater::State::failed:    return s.userAsked ? "Update failed: " + s.message + "." : juce::String();
+        case Updater::State::idle:
+        default:                        return {};
+    }
 }
 
 void LapizAudioProcessorEditor::setLook (Theme::Look look)
@@ -152,9 +197,21 @@ void LapizAudioProcessorEditor::paint (juce::Graphics& g)
     // Footer: help text on the left, version on the right
     auto footer = getLocalBounds().removeFromBottom (footerHeight).reduced (20, 0);
 
-    g.setColour (p.soft);
-    g.setFont (Theme::regular (12.0f));
-    g.drawText (versionTag, footer.removeFromRight (90), juce::Justification::centredRight);
+    // News about updates replaces the version number while there is some.
+    const auto news = updateText();
+    if (news.isNotEmpty())
+    {
+        g.setColour (p.sound);
+        g.setFont (Theme::bold (12.5f));
+        g.drawFittedText (news, footer.removeFromRight (330), juce::Justification::centredRight, 2);
+        footer.removeFromRight (16);
+    }
+    else
+    {
+        g.setColour (p.soft);
+        g.setFont (Theme::regular (12.0f));
+        g.drawText (versionTag, footer.removeFromRight (90), juce::Justification::centredRight);
+    }
 
     g.setColour (p.ink);
     g.setFont (Theme::regular (13.5f));

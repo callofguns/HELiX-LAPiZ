@@ -1,0 +1,113 @@
+# Builds LAPiZ for Windows and publishes a GitHub Release whenever a version tag is pushed:
+#
+#   git tag v1.2.0
+#   git push origin v1.2.0
+#
+# The tag must match the VERSION in CMakeLists.txt and versionTag in Source/Version.h.
+# The release gets three files:
+#   LAPiZ-<version>-setup.exe   the installer, for new users
+#   LAPiZ-<version>-update.zip  the files the plugin downloads to update itself
+#   update.json                 version, link and SHA-256 of the zip; every installed LAPiZ reads this
+#                               (from releases/latest) to find out about new versions
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Check the version numbers match the tag
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if (-not ($tag -match '^v(\d+)\.(\d+)\.(\d+)$')) { throw "Tag '$tag' should look like v1.2.0" }
+          $major = $Matches[1]; $minor = $Matches[2]; $patch = $Matches[3]
+          $version = $tag.Substring(1)
+
+          $cmake = (Select-String -Path CMakeLists.txt -Pattern 'project\(Lapiz VERSION ([0-9.]+)').Matches[0].Groups[1].Value
+          if ($cmake -ne $version) { throw "CMakeLists.txt says $cmake but the tag is $tag" }
+
+          # Version.h shows v1.2 for 1.2.0, and v1.2.1 for 1.2.1.
+          $shown = if ($patch -eq '0') { "v$major.$minor" } else { $tag }
+          $header = (Select-String -Path Source/Version.h -Pattern 'versionTag = "([^"]+)"').Matches[0].Groups[1].Value
+          if ($header -ne $shown) { throw "Source/Version.h says $header but should say $shown for tag $tag" }
+
+          "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cmake -S . -B build -DLAPIZ_AUTO_UPDATE=ON -DLAPIZ_COPY_AFTER_BUILD=OFF
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          cmake --build build --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Test
+        shell: pwsh
+        run: |
+          build\LapizTests_artefacts\Release\LapizTests.exe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Mark the version in the built files
+        shell: pwsh
+        run: |
+          $art = "build\Lapiz_artefacts\Release"
+          New-Item -ItemType Directory -Force "$art\VST3\LAPiZ.vst3\Contents\Resources" | Out-Null
+          Set-Content -NoNewline -Path "$art\VST3\LAPiZ.vst3\Contents\Resources\lapiz-version.txt" -Value $env:VERSION
+          Set-Content -NoNewline -Path "$art\lapiz-version.txt" -Value $env:VERSION
+
+      - name: Make the installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+          }
+          & $iscc "/DAppVersion=$env:VERSION" installer\LAPiZ.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Make the update zip and update.json
+        shell: pwsh
+        run: |
+          $art = "build\Lapiz_artefacts\Release"
+          $stage = "dist\update"
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          Copy-Item -Recurse "$art\VST3\LAPiZ.vst3" "$stage\LAPiZ.vst3"
+          Copy-Item "$art\Standalone\LAPiZ.exe" $stage
+          Copy-Item "$art\lapiz-version.txt" $stage
+          Copy-Item LICENSE "$stage\LICENSE.txt"
+          Copy-Item THIRD_PARTY_NOTICES.txt $stage
+
+          $zip = "dist\LAPiZ-$env:VERSION-update.zip"
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path $stage), (Join-Path (Resolve-Path dist) "LAPiZ-$env:VERSION-update.zip"))
+
+          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
+          $manifest = [ordered]@{
+            version = $env:VERSION
+            url     = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/LAPiZ-$env:VERSION-update.zip"
+            sha256  = $hash
+          }
+          $manifest | ConvertTo-Json | Set-Content -Encoding utf8NoBOM dist\update.json
+          Get-Content dist\update.json
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: LAPiZ ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dist/LAPiZ-*-setup.exe
+            dist/LAPiZ-*-update.zip
+            dist/update.json
