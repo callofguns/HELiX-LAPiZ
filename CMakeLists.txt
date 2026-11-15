@@ -8,6 +8,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # JUCE lives in libs/JUCE (pinned to release 9.0.4).
 add_subdirectory(libs/JUCE)
 
+# Release builds (made by .github/workflows/release.yml) turn this on so the plugin updates itself
+# from GitHub Releases. Leave it off for your own builds, or they'd replace themselves with the published version.
+option(LAPIZ_AUTO_UPDATE "Let this build download and install new releases by itself (Windows)" OFF)
+
+# Copying to Documents\VST3 after every build is handy at home but not on a build server.
+option(LAPIZ_COPY_AFTER_BUILD "Copy the plugin to Documents\\VST3 after building" ON)
+
 # HELiX is the maker name shared by all the plugins; LAPiZ is this one.
 # The codes identify the plugin to hosts, so they should stay unchanged once released.
 juce_add_plugin(Lapiz
@@ -21,7 +28,7 @@ juce_add_plugin(Lapiz
     FORMATS VST3 Standalone
     # Every build copies the plugin to Documents\VST3 (added to FL Studio's plugin search paths),
     # so updates need no admin prompt. FL Studio must be closed while building.
-    COPY_PLUGIN_AFTER_BUILD TRUE
+    COPY_PLUGIN_AFTER_BUILD ${LAPIZ_COPY_AFTER_BUILD}
     VST3_COPY_DIR "$ENV{USERPROFILE}/Documents/VST3"
     PRODUCT_NAME "LAPiZ")
 
@@ -59,12 +66,19 @@ target_sources(Lapiz PRIVATE
     Source/Wavetable.h
     Source/LapizVoice.h
     Source/FilterMath.h
+    Source/UpdateLogic.h
+    Source/Updater.cpp
+    Source/Updater.h
     Source/Version.h)
 
 target_compile_definitions(Lapiz PUBLIC
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0)
+
+if(LAPIZ_AUTO_UPDATE)
+    target_compile_definitions(Lapiz PRIVATE LAPIZ_AUTO_UPDATE=1)
+endif()
 
 # Fonts embedded in the plugin (Atkinson Hyperlegible, SIL Open Font License - see Resources/Fonts/OFL.txt).
 juce_add_binary_data(LapizData SOURCES
@@ -83,6 +97,7 @@ target_link_libraries(LapizTests
         LapizData
         juce::juce_audio_utils
         juce::juce_dsp
+        juce::juce_cryptography
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)
@@ -92,6 +107,7 @@ target_link_libraries(Lapiz
         LapizData
         juce::juce_audio_utils
         juce::juce_dsp
+        juce::juce_cryptography
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags

@@ -43,4 +43,32 @@ namespace Settings
         file.setValue ("page", page);
         file.saveIfNeeded();
     }
+
+    // Whether LAPiZ looks for and installs new versions by itself (on unless you turn it off).
+    inline bool loadAutoUpdate()
+    {
+        juce::PropertiesFile file (fileOptions());
+        return file.getBoolValue ("autoUpdate", true);
+    }
+
+    inline void saveAutoUpdate (bool on)
+    {
+        juce::PropertiesFile file (fileOptions());
+        file.setValue ("autoUpdate", on);
+        file.saveIfNeeded();
+    }
+
+    // When LAPiZ last asked GitHub for a new version (milliseconds since 1970), so it only asks a few times a day.
+    inline juce::int64 loadLastUpdateCheck()
+    {
+        juce::PropertiesFile file (fileOptions());
+        return file.getValue ("lastUpdateCheck", "0").getLargeIntValue();
+    }
+
+    inline void saveLastUpdateCheck (juce::int64 when)
+    {
+        juce::PropertiesFile file (fileOptions());
+        file.setValue ("lastUpdateCheck", juce::String (when));
+        file.saveIfNeeded();
+    }
 }

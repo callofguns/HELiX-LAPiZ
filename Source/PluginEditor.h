@@ -3,6 +3,7 @@
 #include <map>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PluginProcessor.h"
+#include "Updater.h"
 #include "UI/AdvancedPage.h"
 #include "UI/EffectsPage.h"
 #include "UI/LapizLookAndFeel.h"
@@ -12,7 +13,7 @@
 
 // The plugin window: header with tabs and the settings button, the page below it,
 // and a help bar along the bottom.
-class LapizAudioProcessorEditor : public juce::AudioProcessorEditor
+class LapizAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::ChangeListener
 {
 public:
     explicit LapizAudioProcessorEditor (LapizAudioProcessor&);
@@ -31,6 +32,8 @@ private:
     void setHelpText (const juce::String& text);
     void showSettingsMenu();
     void setLook (Theme::Look look);
+    void changeListenerCallback (juce::ChangeBroadcaster*) override;
+    juce::String updateText() const; // shown in the footer instead of the version while there's news
 
     static constexpr int headerHeight = 56;
     static constexpr int footerHeight = 34;
@@ -40,6 +43,7 @@ private:
     // Declared first so they outlive every component that uses them.
     juce::SharedResourcePointer<Theme::Fonts> fonts;
     LapizLookAndFeel lookAndFeel;
+    juce::SharedResourcePointer<Updater> updater;
 
     // These must come before the pages: they register their help texts while being built.
     std::map<juce::Component*, juce::String> helpTexts;

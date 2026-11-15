@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include "PluginProcessor.h"
+#include "UpdateLogic.h"
 #include "FactoryPresets.h"
 #include "FactoryTables.h"
 #include "WavetableFile.h"
@@ -900,6 +901,35 @@ int main (int argc, char** argv)
                    "Init puts every control back to its default");
         }
         file.deleteFile();
+    }
+
+    // ---- Updates ----
+    {
+        using namespace UpdateLogic;
+        check (isNewer ("1.2.0", "1.1.0") && isNewer ("v1.10", "1.9.0") && isNewer ("2.0", "1.99.99"),
+               "a later version counts as newer (including 1.10 after 1.9)");
+        check (! isNewer ("1.1.0", "1.1.0") && ! isNewer ("v1.1", "1.1.0") && ! isNewer ("1.0.9", "1.1.0"),
+               "the same or an earlier version doesn't count as newer");
+        check (! isNewer ("", "1.0.0") && ! isNewer ("1.2.x", "1.0.0") && ! isNewer ("banana", "1.0.0"),
+               "an unreadable version is never treated as newer");
+        check (later ("1.2.0", "1.10.0") == "1.10.0" && later ("", "1.1.0") == "1.1.0", "the later of two versions is picked");
+
+        const juce::String hash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789ABCDEF";
+        const auto good = parseManifest (R"({"version": "1.2.0", "url": "https://github.com/callofguns/HELiX-LAPiZ/releases/download/v1.2.0/LAPiZ-1.2.0-update.zip", "sha256": ")" + hash + "\"}");
+        check (good.has_value() && good->version == "1.2.0" && good->sha256 == hash.toLowerCase(), "a correct update.json is read");
+
+        auto manifestWith = [&hash] (const juce::String& url, const juce::String& sha)
+        {
+            return parseManifest ("{\"version\": \"1.2.0\", \"url\": \"" + url + "\", \"sha256\": \"" + sha + "\"}").has_value();
+        };
+        check (! manifestWith ("https://example.com/LAPiZ.zip", hash)
+                   && ! manifestWith ("http://github.com/callofguns/HELiX-LAPiZ/releases/download/v1.2.0/u.zip", hash)
+                   && ! manifestWith ("https://github.com/callofguns/HELiX-LAPiZ/releases/download/../../evil/u.zip", hash)
+                   && ! manifestWith ("https://github.com/callofguns/HELiX-LAPiZ/releases/download/v1.2.0/u.exe", hash),
+               "update.json is refused unless the download is a zip from this repository's releases");
+        check (! manifestWith ("https://github.com/callofguns/HELiX-LAPiZ/releases/download/v1.2.0/u.zip", "abc")
+                   && ! parseManifest ("not json").has_value(),
+               "update.json is refused if the checksum is missing or the file is garbled");
     }
 
     std::cout << (failures == 0 ? "\nAll checks passed." : "\nSome checks FAILED.") << std::endl;

@@ -15,6 +15,17 @@ Run `LAPiZ-<version>-setup.exe`. It puts the plugin in `C:\Program Files\Common 
 (and, if you choose, the standalone app in `Program Files\HELiX\LAPiZ`).
 Then in FL Studio open **Options > Manage plugins**, click **Find installed plugins**, and star LAPiZ.
 
+### Updates
+
+From v1.2 on, LAPiZ keeps itself up to date. When you open its window, it checks GitHub for a new
+release (at most every 6 hours). If one exists, it downloads it, checks the file's SHA-256, and
+installs it in the background. The footer then says "Updated to vX. Restart FL Studio to use it."
+You can turn this off, or check straight away, in the settings (gear) menu.
+
+Updating never needs an administrator prompt: the installer lets normal users change the two
+LAPiZ folders (the plugin in `Common Files\VST3\LAPiZ.vst3` and the app folder).
+Installs of v1.1 or older have to install v1.2 by hand once.
+
 ## Building
 
 Needs Visual Studio Build Tools and CMake. JUCE is a git submodule, so clone with:
@@ -34,6 +45,22 @@ To make the installer, install [Inno Setup 6](https://jrsoftware.org/isinfo.php)
     "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" installer\LAPiZ.iss
 
 The installer is written to `dist\`.
+
+Builds on your own computer don't update themselves. Only release builds do, which are made with
+`-DLAPIZ_AUTO_UPDATE=ON`. Add `-DLAPIZ_COPY_AFTER_BUILD=OFF` to skip copying to `Documents\VST3`.
+
+## Releasing a new version
+
+1. Bump the version in three places: `VERSION` in `CMakeLists.txt` (e.g. `1.2.0`), `versionTag` in
+   `Source/Version.h` (`v1.2`), and the default `AppVersion` in `installer/LAPiZ.iss`.
+2. Commit, then tag and push the tag:
+
+       git tag v1.2.0
+       git push origin v1.2.0
+
+GitHub Actions (`.github/workflows/release.yml`) then builds and tests LAPiZ, makes the installer
+and the update zip, and publishes them as a GitHub Release with an `update.json`. Every installed
+copy of LAPiZ picks it up from there.
 
 ## License
 
