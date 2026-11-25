@@ -53,14 +53,16 @@ Builds on your own computer don't update themselves. Only release builds do, whi
 
 1. Bump the version in three places: `VERSION` in `CMakeLists.txt` (e.g. `1.2.0`), `versionTag` in
    `Source/Version.h` (`v1.2`), and the default `AppVersion` in `installer/LAPiZ.iss`.
-2. Commit, then tag and push the tag:
+2. Commit and push, then either publish a release on GitHub with a new tag such as `v1.2`
+   (Releases > Draft a new release), or push the tag yourself:
 
-       git tag v1.2.0
-       git push origin v1.2.0
+       git tag v1.2
+       git push origin v1.2
 
 GitHub Actions (`.github/workflows/release.yml`) then builds and tests LAPiZ, makes the installer
-and the update zip, and publishes them as a GitHub Release with an `update.json`. Every installed
-copy of LAPiZ picks it up from there.
+and the update zip, and adds them to the GitHub Release along with an `update.json`. Every
+installed copy of LAPiZ picks it up from there. If a run fails, fix the problem on master, then
+rebuild the same tag with **Actions > Release > Run workflow**.
 
 ## License
 
