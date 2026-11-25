@@ -1,9 +1,14 @@
-# Builds LAPiZ for Windows and publishes a GitHub Release whenever a version tag is pushed:
+# Builds LAPiZ for Windows and publishes a GitHub Release whenever a version tag is pushed,
+# including a tag created by publishing a release on GitHub:
 #
-#   git tag v1.2.0
-#   git push origin v1.2.0
+#   git tag v1.2
+#   git push origin v1.2
 #
-# The tag must match the VERSION in CMakeLists.txt and versionTag in Source/Version.h.
+# To build a tag that already exists (say the first run failed), open Actions > Release >
+# Run workflow and type the tag. The files are added to that tag's release if it already has one.
+#
+# The tag can be v1.2 or v1.2.0, and must match the VERSION in CMakeLists.txt (1.2.0)
+# and versionTag in Source/Version.h (v1.2).
 # The release gets three files:
 #   LAPiZ-<version>-setup.exe   the installer, for new users
 #   LAPiZ-<version>-update.zip  the files the plugin downloads to update itself
@@ -14,6 +19,11 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag to build and publish, e.g. v1.2"
+        required: true
 
 permissions:
   contents: write
@@ -21,24 +31,28 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    env:
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
+          ref: refs/tags/${{ env.TAG }}
           submodules: true
 
       - name: Check the version numbers match the tag
         shell: pwsh
         run: |
-          $tag = "${{ github.ref_name }}"
-          if (-not ($tag -match '^v(\d+)\.(\d+)\.(\d+)$')) { throw "Tag '$tag' should look like v1.2.0" }
-          $major = $Matches[1]; $minor = $Matches[2]; $patch = $Matches[3]
-          $version = $tag.Substring(1)
+          $tag = $env:TAG
+          if (-not ($tag -match '^v(\d+)\.(\d+)(\.(\d+))?$')) { throw "Tag '$tag' should look like v1.2 or v1.2.1" }
+          $major = $Matches[1]; $minor = $Matches[2]
+          $patch = if ($Matches[4]) { $Matches[4] } else { '0' }
+          $version = "$major.$minor.$patch"
 
           $cmake = (Select-String -Path CMakeLists.txt -Pattern 'project\(Lapiz VERSION ([0-9.]+)').Matches[0].Groups[1].Value
           if ($cmake -ne $version) { throw "CMakeLists.txt says $cmake but the tag is $tag" }
 
           # Version.h shows v1.2 for 1.2.0, and v1.2.1 for 1.2.1.
-          $shown = if ($patch -eq '0') { "v$major.$minor" } else { $tag }
+          $shown = if ($patch -eq '0') { "v$major.$minor" } else { "v$version" }
           $header = (Select-String -Path Source/Version.h -Pattern 'versionTag = "([^"]+)"').Matches[0].Groups[1].Value
           if ($header -ne $shown) { throw "Source/Version.h says $header but should say $shown for tag $tag" }
 
@@ -96,7 +110,7 @@ jobs:
           $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
           $manifest = [ordered]@{
             version = $env:VERSION
-            url     = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/LAPiZ-$env:VERSION-update.zip"
+            url     = "https://github.com/${{ github.repository }}/releases/download/$env:TAG/LAPiZ-$env:VERSION-update.zip"
             sha256  = $hash
           }
           $manifest | ConvertTo-Json | Set-Content -Encoding utf8NoBOM dist\update.json
@@ -105,8 +119,8 @@ jobs:
       - name: Publish the release
         uses: softprops/action-gh-release@v2
         with:
-          name: LAPiZ ${{ github.ref_name }}
-          generate_release_notes: true
+          tag_name: ${{ env.TAG }}
+          name: LAPiZ ${{ env.TAG }}
           files: |
             dist/LAPiZ-*-setup.exe
             dist/LAPiZ-*-update.zip
