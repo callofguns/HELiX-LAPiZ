@@ -29,3 +29,27 @@ Bump it in all of these places, in the same pull request as the change:
 
 The release tag follows the same rule: `v1.2.1` for a small change, `v1.3` for a feature release.
 The workflow (`.github/workflows/release.yml`) refuses to build a tag that doesn't match these files.
+
+## Release notes
+
+Whenever a change bumps the version, write release notes for it and give them to the owner in
+chat, ready to paste into the GitHub release. Put the same notes in the pull request description.
+If several pull requests share one version, the notes cover all of them.
+
+Write them for people who use LAPiZ, not for developers: what changed and why it matters to them,
+in plain words, with no file names or code. Use this shape:
+
+```markdown
+## LAPiZ v1.2.1: <a few words on what it's about>
+
+<One or two sentences: what this release is.>
+
+### What's new        (or "What's fixed" for a release with only fixes)
+- **<Change>.** <What it means for the user.>
+
+### Updating
+If you have LAPiZ 1.2 or later, it updates itself: open LAPiZ and restart FL Studio when the bar
+at the bottom says so. On 1.1 or older? Download **LAPiZ-<version>-setup.exe** below and run it.
+```
+
+Leave out sections that would be empty, and keep a fix release short.
