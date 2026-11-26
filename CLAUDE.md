@@ -23,14 +23,15 @@ Every change that reaches users bumps the version. Pick the part to bump by the 
 If a pull request already bumps the version and hasn't been released yet, don't bump it again:
 several small changes can share one patch version.
 
-Bump it in all of these places, in the same pull request as the change:
+Bump it in these places, in the same pull request as the change:
 
 | File | 1.2.1 looks like | 1.3.0 looks like |
 | --- | --- | --- |
 | `CMakeLists.txt`: `project(Lapiz VERSION ...)` | `1.2.1` | `1.3.0` |
 | `Source/Version.h`: `versionTag` | `v1.2.1` | `v1.3` |
 | `installer/LAPiZ.iss`: default `AppVersion` | `1.2.1` | `1.3.0` |
-| `docs/index.html`: the version in the hero and the setup file name in the install steps | `1.2.1`, `LAPiZ-1.2.1-setup.exe` | `1.3`, `LAPiZ-1.3.0-setup.exe` |
+
+The website is the exception: see "The website waits for the release" below.
 
 `versionTag` drops a trailing `.0` (`v1.3`, not `v1.3.0`); the release workflow checks this.
 
@@ -71,13 +72,28 @@ More about LAPiZ: https://callofguns.github.io/HELiX-LAPiZ/
 
 Leave out sections that would be empty, and keep a fix release short.
 
+## The website waits for the release
+
+The website (`docs/`) goes live as soon as a change reaches master, so it must always describe the
+latest **published** release, never an unreleased version. Feature and fix pull requests don't
+touch `docs/`: no new version number, no setup file name, no mention of an unreleased feature.
+
+When the owner decides to release, make one small **release prep** pull request first, with all
+the website changes for that release:
+
+- the version in the hero (`1.3`) and the setup file name in the install steps (`LAPiZ-1.3.0-setup.exe`);
+- any text, screenshots or sections about what the release adds or changes.
+
+The owner merges it and then creates the GitHub release. Website-only changes that aren't about an
+unreleased version (a typo, a layout fix, accessibility) can go out any time.
+
 ## Releasing: ask first
 
 After every change that bumps the version, ask the owner whether to publish it as a release now or
 wait and collect more updates first. Don't assume either way, and ask again for the next change.
 
-- **Release now:** once the pull request is merged, the owner creates the GitHub release with the
-  tag (Claude can't push tags from cloud sessions) and pastes the release notes. Offer to check the
+- **Release now:** make the release prep pull request (above). Once it's merged, the owner
+  creates the GitHub release with the tag (Claude can't push tags from cloud sessions) and pastes the release notes. Offer to check the
   build afterwards.
 - **Wait:** the next change keeps adding to the same unreleased version where the rules above allow
   (small changes share it; a new feature moves it to the next second number), and the release notes
