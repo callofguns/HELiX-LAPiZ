@@ -7,12 +7,13 @@
 #include "UI/AdvancedPage.h"
 #include "UI/EffectsPage.h"
 #include "UI/LapizLookAndFeel.h"
+#include "UI/PianoKeyboard.h"
 #include "UI/PresetBar.h"
 #include "UI/SimplePage.h"
 #include "UI/WavesPage.h"
 
 // The plugin window: header with tabs and the settings button, the page below it,
-// and a help bar along the bottom.
+// a piano keyboard, and a help bar along the bottom.
 class LapizAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::ChangeListener
 {
 public:
@@ -37,6 +38,7 @@ private:
 
     static constexpr int headerHeight = 56;
     static constexpr int footerHeight = 34;
+    static constexpr int keyboardHeight = 64;
 
     LapizAudioProcessor& processor;
 
@@ -57,6 +59,7 @@ private:
     WavesPage wavesPage;
     AdvancedPage advancedPage;
     EffectsPage effectsPage;
+    PianoKeyboard keyboard;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LapizAudioProcessorEditor)
 };

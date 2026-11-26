@@ -16,7 +16,8 @@ LapizAudioProcessorEditor::LapizAudioProcessorEditor (LapizAudioProcessor& p)
       simplePage (p, [this] (juce::Component& c, const juce::String& text) { registerHelp (c, text); }),
       wavesPage (p, [this] (juce::Component& c, const juce::String& text) { registerHelp (c, text); }),
       advancedPage (p, [this] (juce::Component& c, const juce::String& text) { registerHelp (c, text); }),
-      effectsPage (p, [this] (juce::Component& c, const juce::String& text) { registerHelp (c, text); })
+      effectsPage (p, [this] (juce::Component& c, const juce::String& text) { registerHelp (c, text); }),
+      keyboard (p.getKeyboardState())
 {
     Theme::currentLook() = Settings::loadLook();
     lookAndFeel.refreshColours();
@@ -49,12 +50,16 @@ LapizAudioProcessorEditor::LapizAudioProcessorEditor (LapizAudioProcessor& p)
     addChildComponent (advancedPage);
     addChildComponent (effectsPage);
 
+    addAndMakeVisible (keyboard);
+    registerHelp (keyboard, "Piano: click a key to play a note, or drag across the keys. Click higher up a key to play it louder. "
+                            "Notes from FL Studio light up here too. Middle C is C5, as in FL Studio.");
+
     const auto lastPage = Settings::loadPage();
     showPage (lastPage == "waves" ? Page::waves : lastPage == "advanced" ? Page::advanced
             : lastPage == "effects" ? Page::effects : Page::simple);
 
     setResizable (false, false);
-    setSize (900, 580);
+    setSize (900, 580 + keyboardHeight);
 
     updater->addChangeListener (this);
     updater->checkAutomatically();
@@ -239,6 +244,7 @@ void LapizAudioProcessorEditor::resized()
     presetBar.setBounds (header);
 
     area.removeFromBottom (footerHeight);
+    keyboard.setBounds (area.removeFromBottom (keyboardHeight).reduced (20, 0).withTrimmedBottom (4));
     simplePage.setBounds (area);
     wavesPage.setBounds (area);
     advancedPage.setBounds (area);

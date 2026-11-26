@@ -70,3 +70,15 @@ More about LAPiZ: https://callofguns.github.io/HELiX-LAPiZ/
 ```
 
 Leave out sections that would be empty, and keep a fix release short.
+
+## Releasing: ask first
+
+After every change that bumps the version, ask the owner whether to publish it as a release now or
+wait and collect more updates first. Don't assume either way, and ask again for the next change.
+
+- **Release now:** once the pull request is merged, the owner creates the GitHub release with the
+  tag (Claude can't push tags from cloud sessions) and pastes the release notes. Offer to check the
+  build afterwards.
+- **Wait:** the next change keeps adding to the same unreleased version where the rules above allow
+  (small changes share it; a new feature moves it to the next second number), and the release notes
+  grow to cover everything since the last release.

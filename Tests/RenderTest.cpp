@@ -11,6 +11,7 @@
 #include "WavetableFile.h"
 #include "UI/LapizLookAndFeel.h"
 #include "UI/WavesPage.h"
+#include "PluginEditor.h"
 
 namespace
 {
@@ -347,9 +348,42 @@ static int saveWavesSnapshot (const juce::File& file)
     return juce::PNGImageFormat().writeImageToStream (image, out) ? 0 : 1;
 }
 
+// LapizTests.exe --window <file.png> [daylight]: draws the whole plugin window and saves a picture of it.
+static int saveWindowSnapshot (const juce::File& file, bool daylight)
+{
+    LapizAudioProcessor processor;
+    processor.getKeyboardState().noteOn (1, 60, 0.8f); // show a few keys held down
+    processor.getKeyboardState().noteOn (1, 64, 0.8f);
+    processor.getKeyboardState().noteOn (1, 67, 0.8f);
+
+    const auto previousLook = Theme::currentLook();
+    {
+        LapizAudioProcessorEditor editor (processor);
+        if (daylight)
+        {
+            Theme::currentLook() = Theme::Look::daylight;
+            editor.sendLookAndFeelChange();
+        }
+        juce::Image image (juce::Image::ARGB, editor.getWidth(), editor.getHeight(), true);
+        {
+            juce::Graphics g (image);
+            editor.paintEntireComponent (g, true);
+        }
+        file.deleteFile();
+        juce::FileOutputStream out (file);
+        if (! juce::PNGImageFormat().writeImageToStream (image, out))
+            return 1;
+    }
+    Theme::currentLook() = previousLook;
+    return 0;
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI juceInitialiser;
+
+    if ((argc == 3 || argc == 4) && juce::String (argv[1]) == "--window")
+        return saveWindowSnapshot (juce::File (juce::String (argv[2])), argc == 4 && juce::String (argv[3]) == "daylight");
 
     if (argc == 3 && juce::String (argv[1]) == "--snapshot")
         return saveWavesSnapshot (juce::File (juce::String (argv[2])));
@@ -901,6 +935,42 @@ int main (int argc, char** argv)
                    "Init puts every control back to its default");
         }
         file.deleteFile();
+    }
+
+    // ---- On-screen piano ----
+    {
+        LapizAudioProcessor processor;
+        processor.setPlayConfigDetails (0, 2, testSampleRate, blockSize);
+        processor.prepareToPlay (testSampleRate, blockSize);
+
+        auto play = [&processor] (int blocks)
+        {
+            double sumSq = 0.0;
+            juce::AudioBuffer<float> buffer (2, blockSize);
+            for (int b = 0; b < blocks; ++b)
+            {
+                juce::MidiBuffer midi; // nothing from the host
+                processor.processBlock (buffer, midi);
+                for (int i = 0; i < blockSize; ++i)
+                    sumSq += buffer.getSample (0, i) * buffer.getSample (0, i);
+            }
+            return std::sqrt (sumSq / (blocks * blockSize));
+        };
+
+        const double silent = play (20);
+        processor.getKeyboardState().noteOn (1, noteA3, 0.8f);
+        const double playing = play (20);
+        check (silent < 1.0e-6 && playing > 0.01, "a key pressed on the on-screen piano plays a note");
+
+        processor.getKeyboardState().noteOff (1, noteA3, 0.0f);
+        play (200); // let the release finish
+        check (play (20) < 1.0e-4, "letting go of the key on the on-screen piano ends the note");
+
+        juce::MidiBuffer fromHost;
+        fromHost.addEvent (juce::MidiMessage::noteOn (1, 72, 0.8f), 0);
+        juce::AudioBuffer<float> buffer (2, blockSize);
+        processor.processBlock (buffer, fromHost);
+        check (processor.getKeyboardState().isNoteOn (1, 72), "a note from the host lights up on the on-screen piano");
     }
 
     // ---- Updates ----
