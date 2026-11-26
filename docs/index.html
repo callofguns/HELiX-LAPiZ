@@ -137,6 +137,9 @@ input[type="range"] { width: 100%; accent-color: var(--pyrite); }
 .steps b { color: var(--calcite); }
 .note { margin-top: 24px; color: var(--mist); font-size: 0.95rem; }
 
+.update-points { margin: 0; padding-left: 1.1em; display: grid; gap: 12px; max-width: 70ch; color: var(--mist); }
+.update-points b { color: var(--calcite); }
+
 footer { border-top: 1px solid var(--vein); padding-block: 32px 48px; color: var(--mist); font-size: 0.92rem; }
 footer .wrap { display: grid; gap: 8px; }
 
@@ -154,10 +157,11 @@ footer .wrap { display: grid; gap: 8px; }
       <div>
         <h1 class="wordmark" aria-label="LAPiZ">LAP<span class="i">i</span>Z</h1>
         <p class="tagline">A free wavetable synth for FL Studio that tells you what every knob does.</p>
-        <p class="facts">VST3 for Windows. Open source under the AGPLv3. Version 1.1.</p>
+        <p class="facts">VST3 for Windows. Open source under the AGPLv3. Version 1.2, and it keeps itself up to date.</p>
         <div class="actions">
-          <a class="button" href="https://github.com/callofguns/HELiX-LAPiZ">Get LAPiZ on GitHub</a>
+          <a class="button" href="https://github.com/callofguns/HELiX-LAPiZ/releases/latest">Download LAPiZ</a>
           <a class="quiet-link" href="#install">How to install</a>
+          <a class="quiet-link" href="https://github.com/callofguns/HELiX-LAPiZ">Source on GitHub</a>
         </div>
       </div>
       <div class="scope">
@@ -241,6 +245,20 @@ footer .wrap { display: grid; gap: 8px; }
     </div>
   </section>
 
+  <section id="updates">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Always the newest version</h2>
+        <p class="lede">From version 1.2, LAPiZ updates itself. When you open it, it quietly checks for a new version, downloads it and installs it in the background while you keep making music. The bar at the bottom tells you when it's done: restart FL Studio and you're on the new version. No installer to run and no admin prompt.</p>
+      </div>
+      <ul class="update-points">
+        <li><b>Safe.</b> Updates only come from LAPiZ's own releases on GitHub, and each download is checked before it's installed. If anything goes wrong, your current version stays as it was.</li>
+        <li><b>Your choice.</b> Open the gear menu to turn automatic updates off, or click <b>Check for updates now</b>.</li>
+        <li><b>On version 1.1 or older?</b> Install 1.2 once using the steps below. Updates are automatic from then on.</li>
+      </ul>
+    </div>
+  </section>
+
   <section id="install">
     <div class="wrap">
       <div class="section-head">
@@ -248,11 +266,12 @@ footer .wrap { display: grid; gap: 8px; }
         <p class="lede">LAPiZ runs on 64-bit Windows in FL Studio or any other music software that loads VST3 plugins.</p>
       </div>
       <ol class="steps">
-        <li><p>Download <b>LAPiZ-1.2.0-setup.exe</b> from the <a href="https://github.com/callofguns/HELiX-LAPiZ/releases">Releases page on GitHub</a>.</p></li>
+        <li><p>Download <b>LAPiZ-1.2.0-setup.exe</b> from the <a href="https://github.com/callofguns/HELiX-LAPiZ/releases/latest">latest release on GitHub</a>.</p></li>
         <li><p>Run it. Windows may warn that the app is from an unknown publisher, because LAPiZ isn't code-signed yet. Click <b>More info</b>, then <b>Run anyway</b>.</p></li>
         <li><p>In FL Studio, open <b>Options &gt; Manage plugins</b> and click <b>Find installed plugins</b>.</p></li>
         <li><p>Find LAPiZ in the list (made by HELiX) and click its star. It now shows up in the plugin browser and the Channel Rack's + menu.</p></li>
       </ol>
+      <p class="note">That's the only time you need to install it. New versions arrive by themselves.</p>
       <p class="note">Prefer to build it yourself? The README on GitHub has the steps. You need Visual Studio Build Tools and CMake.</p>
     </div>
   </section>
