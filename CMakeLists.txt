@@ -81,10 +81,11 @@ if(LAPIZ_AUTO_UPDATE)
     target_compile_definitions(Lapiz PRIVATE LAPIZ_AUTO_UPDATE=1)
 endif()
 
-# Fonts embedded in the plugin (Atkinson Hyperlegible, SIL Open Font License - see Resources/Fonts/OFL.txt).
+# Fonts embedded in the plugin (Inter, SIL Open Font License - see Resources/Fonts/OFL.txt).
+# Apple's SF Pro would be the first choice, but its license doesn't allow building it into a Windows plugin.
 juce_add_binary_data(LapizData SOURCES
-    Resources/Fonts/AtkinsonHyperlegible-Regular.ttf
-    Resources/Fonts/AtkinsonHyperlegible-Bold.ttf)
+    Resources/Fonts/Inter-Regular.ttf
+    Resources/Fonts/Inter-Bold.ttf)
 
 # Command-line test: plays notes through the synth and checks the numbers (see Tests/RenderTest.cpp).
 juce_add_console_app(LapizTests PRODUCT_NAME "LapizTests")

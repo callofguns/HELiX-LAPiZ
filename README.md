@@ -83,7 +83,7 @@ You should have received a copy of the GNU Affero General Public License along w
 ### Third-party code and fonts
 
 LAPiZ is built with [JUCE](https://juce.com) 9.0.4, used under the AGPLv3 (JUCE is also available
-under a commercial licence), and includes the Atkinson Hyperlegible font (SIL Open Font License 1.1)
+under a commercial licence), and includes the Inter font (SIL Open Font License 1.1)
 and several permissively licensed libraries that come with JUCE (zlib, HarfBuzz, libpng, FLAC,
 the VST3 SDK and others). Their licences are reproduced in full in
 [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt), which the installer also copies next to the app.

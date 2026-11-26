@@ -71,14 +71,15 @@ namespace Theme
         c.getProperties().set ("module", (int) module);
     }
 
-    // Atkinson Hyperlegible, embedded in the plugin (SIL Open Font License, see Resources/Fonts/OFL.txt).
+    // Inter, embedded in the plugin (SIL Open Font License, see Resources/Fonts/OFL.txt).
+    // (Apple's SF Pro was wanted, but its license doesn't allow building it into a Windows plugin.)
     // Shared between all open LAPiZ windows and released when the last one closes.
     struct Fonts
     {
         juce::Typeface::Ptr regular = juce::Typeface::createSystemTypefaceFor (
-            BinaryData::AtkinsonHyperlegibleRegular_ttf, (size_t) BinaryData::AtkinsonHyperlegibleRegular_ttfSize);
+            BinaryData::InterRegular_ttf, (size_t) BinaryData::InterRegular_ttfSize);
         juce::Typeface::Ptr bold = juce::Typeface::createSystemTypefaceFor (
-            BinaryData::AtkinsonHyperlegibleBold_ttf, (size_t) BinaryData::AtkinsonHyperlegibleBold_ttfSize);
+            BinaryData::InterBold_ttf, (size_t) BinaryData::InterBold_ttfSize);
     };
 
     inline juce::Font regular (float size)
