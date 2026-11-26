@@ -3,6 +3,13 @@
 A wavetable synth for FL Studio (VST3, Windows) built with JUCE. See README.md for building,
 testing and releasing.
 
+## Spelling
+
+The owner is in the US: use US spelling in everything people read, including the plugin's text,
+the website, the README, release notes and pull requests ("color", "center", "favorite",
+"behavior", "gray", "analog"). Code that calls JUCE keeps JUCE's names (`juce::Colour`,
+`Colours::`), since those can't change.
+
 ## Version numbers
 
 Every change that reaches users bumps the version. Pick the part to bump by the size of the change:
@@ -36,6 +43,11 @@ Whenever a change bumps the version, write release notes for it and give them to
 chat, ready to paste into the GitHub release. Put the same notes in the pull request description.
 If several pull requests share one version, the notes cover all of them.
 
+The notes also cover the website (`docs/index.html`, live at
+https://callofguns.github.io/HELiX-LAPiZ/): list what changed on it since the last release, even
+in pull requests that didn't bump the version, and always end with a link to it. To find those
+changes, compare `docs/` with the previous release tag (`git diff <last tag> -- docs`).
+
 Write them for people who use LAPiZ, not for developers: what changed and why it matters to them,
 in plain words, with no file names or code. Use this shape:
 
@@ -47,9 +59,14 @@ in plain words, with no file names or code. Use this shape:
 ### What's new        (or "What's fixed" for a release with only fixes)
 - **<Change>.** <What it means for the user.>
 
+### On the website
+- **<Change>.** <What visitors will see.>
+
 ### Updating
 If you have LAPiZ 1.2 or later, it updates itself: open LAPiZ and restart FL Studio when the bar
 at the bottom says so. On 1.1 or older? Download **LAPiZ-<version>-setup.exe** below and run it.
+
+More about LAPiZ: https://callofguns.github.io/HELiX-LAPiZ/
 ```
 
 Leave out sections that would be empty, and keep a fix release short.
