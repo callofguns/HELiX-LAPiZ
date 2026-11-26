@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "Icons.h"
 #include "Theme.h"
 #include "../FactoryTables.h"
 #include "../PluginProcessor.h"
@@ -13,7 +14,7 @@ class WavetablePicker : public juce::Component, private juce::ChangeListener
 public:
     explicit WavetablePicker (LapizAudioProcessor& p) : processor (p)
     {
-        for (auto* b : { &previous, &next, &nameButton })
+        for (juce::Component* b : { (juce::Component*) &previous, (juce::Component*) &next, (juce::Component*) &nameButton })
             addAndMakeVisible (b);
 
         previous.onClick   = [this] { step (-1); };
@@ -162,5 +163,6 @@ private:
     void changeListenerCallback (juce::ChangeBroadcaster*) override { refresh(); }
 
     LapizAudioProcessor& processor;
-    juce::TextButton previous { "<" }, next { ">" }, nameButton;
+    IconButton previous { "Previous wavetable", IconButton::Icon::previous }, next { "Next wavetable", IconButton::Icon::next };
+    juce::TextButton nameButton;
 };

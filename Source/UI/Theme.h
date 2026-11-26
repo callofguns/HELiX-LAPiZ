@@ -31,7 +31,7 @@ namespace Theme
 
     inline const Palette daylightPalette {
         juce::Colour (0xffdfe5ec), juce::Colour (0xfff8fafc), juce::Colour (0xffeef2f6),
-        juce::Colour (0xffc9d2dc), juce::Colour (0xff1c2330), juce::Colour (0xff5d6878),
+        juce::Colour (0xffc9d2dc), juce::Colour (0xff1c2330), juce::Colour (0xff56616f),
         juce::Colour (0xff066b67), juce::Colour (0xff5b47d6), juce::Colour (0xffc33a5c), juce::Colour (0xffa16207), juce::Colour (0xff1f6fd1),
         juce::Colour (0xffffffff)
     };
@@ -79,7 +79,7 @@ namespace Theme
         juce::Typeface::Ptr regular = juce::Typeface::createSystemTypefaceFor (
             BinaryData::InterRegular_ttf, (size_t) BinaryData::InterRegular_ttfSize);
         juce::Typeface::Ptr bold = juce::Typeface::createSystemTypefaceFor (
-            BinaryData::InterBold_ttf, (size_t) BinaryData::InterBold_ttfSize);
+            BinaryData::InterSemiBold_ttf, (size_t) BinaryData::InterSemiBold_ttfSize);
     };
 
     inline juce::Font regular (float size)

@@ -195,6 +195,7 @@ void SimplePage::resized()
         inner.removeFromTop (panelTitleHeight);
         inner.removeFromBottom (10);
         knobRow (inner.removeFromBottom (knobRowHeight), { &sustain, &release });
+        inner.removeFromBottom (12);
         knobRow (inner.removeFromBottom (knobRowHeight), { &attack, &decay });
         inner.removeFromBottom (10);
         envelopeView.setBounds (inner);

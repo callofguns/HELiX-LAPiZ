@@ -54,6 +54,7 @@ LapizView::LapizView (LapizAudioProcessor& p)
     addChildComponent (effectsPage);
 
     addAndMakeVisible (keyboard);
+    addChildComponent (focusRing);
     registerHelp (keyboard, "Piano: click a key to play a note, or drag across the keys. Click higher up a key to play it louder. "
                             "Notes from FL Studio light up here too. Middle C is C5, as in FL Studio.");
 
@@ -152,6 +153,11 @@ void LapizView::registerHelp (juce::Component& component, const juce::String& te
 {
     helpTexts[&component] = text;
     component.addMouseListener (this, false);
+
+    // The same words for screen readers, on the control itself (a knob's slider, not its labels).
+    component.setHelpText (text);
+    if (auto* knob = dynamic_cast<LabeledKnob*> (&component))
+        knob->getSlider().setHelpText (text);
 }
 
 void LapizView::showPage (Page page)

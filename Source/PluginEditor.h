@@ -12,6 +12,45 @@
 #include "UI/SimplePage.h"
 #include "UI/WavesPage.h"
 
+// A ring around whatever has keyboard focus, so people using Tab can see where they are.
+// It only shows when focus moved by keyboard, not when something was clicked.
+class FocusRing : public juce::Component, private juce::FocusChangeListener
+{
+public:
+    FocusRing()
+    {
+        setInterceptsMouseClicks (false, false);
+        setAlwaysOnTop (true);
+        juce::Desktop::getInstance().addFocusChangeListener (this);
+    }
+
+    ~FocusRing() override { juce::Desktop::getInstance().removeFocusChangeListener (this); }
+
+    void paint (juce::Graphics& g) override
+    {
+        g.setColour (Theme::get().ink);
+        g.drawRoundedRectangle (getLocalBounds().toFloat().reduced (1.0f), 7.0f, 2.0f);
+    }
+
+private:
+    void globalFocusChanged (juce::Component* focused) override
+    {
+        auto* parent = getParentComponent();
+        const auto now = juce::Time::getCurrentTime();
+        const auto lastClick = juce::Desktop::getInstance().getMainMouseSource().getLastMouseDownTime();
+        const bool byMouse = (now - lastClick).inMilliseconds() < 400;
+
+        if (focused == nullptr || parent == nullptr || byMouse || ! parent->isParentOf (focused) || ! focused->isShowing())
+        {
+            setVisible (false);
+            return;
+        }
+        setBounds (parent->getLocalArea (focused, focused->getLocalBounds()).expanded (3));
+        setVisible (true);
+        toFront (false);
+    }
+};
+
 // Everything in the plugin window: header with tabs and the settings button, the page below it,
 // a piano keyboard, and a help bar along the bottom. It's always laid out at its design size
 // (900 x 644); the editor below scales it to whatever size the window is.
@@ -67,6 +106,7 @@ private:
     AdvancedPage advancedPage;
     EffectsPage effectsPage;
     PianoKeyboard keyboard;
+    FocusRing focusRing;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LapizView)
 };
