@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Lapiz VERSION 1.3.0 LANGUAGES C CXX)
+project(Lapiz VERSION 1.4.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -56,6 +56,7 @@ target_sources(Lapiz PRIVATE
     Source/Effects.h
     Source/FactoryTables.h
     Source/FactoryPresets.h
+    Source/Surprise.h
     Source/WavetableFile.h
     Source/UI/Theme.h
     Source/UI/Settings.h

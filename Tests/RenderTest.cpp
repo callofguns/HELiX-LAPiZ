@@ -4,7 +4,9 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <functional>
 #include "PluginProcessor.h"
+#include "Surprise.h"
 #include "UpdateLogic.h"
 #include "FactoryPresets.h"
 #include "FactoryTables.h"
@@ -256,12 +258,12 @@ namespace
     // "loudest" is the level of the loudest 0.3 seconds, closer to how loud a short note sounds than the overall rms.
     struct PresetLevel { bool finite = true; float peak = 0.0f; double rms = 0.0, loudest = 0.0; juce::String loadedName; };
 
-    PresetLevel playPresetChord (int index)
+    PresetLevel playChord (const std::function<void (LapizAudioProcessor&)>& load)
     {
         LapizAudioProcessor processor;
         processor.setPlayConfigDetails (0, 2, testSampleRate, blockSize);
         processor.prepareToPlay (testSampleRate, blockSize);
-        processor.loadFactoryPreset (index);
+        load (processor);
 
         PresetLevel level;
         juce::AudioBuffer<float> buffer (2, blockSize);
@@ -300,6 +302,11 @@ namespace
         }
         level.loadedName = processor.getPresetName();
         return level;
+    }
+
+    PresetLevel playPresetChord (int index)
+    {
+        return playChord ([index] (LapizAudioProcessor& p) { p.loadFactoryPreset (index); });
     }
 
     int failures = 0;
@@ -349,7 +356,8 @@ static int saveWavesSnapshot (const juce::File& file)
     return juce::PNGImageFormat().writeImageToStream (image, out) ? 0 : 1;
 }
 
-// LapizTests.exe --window <file.png> [simple|waves|advanced|effects] [daylight] [2x]:
+// LapizTests.exe --window <file.png> [simple|waves|advanced|effects] [daylight] [2x] [surprise]
+//                [preset=<name>] [size=<percent>]:
 // draws the whole plugin window on one tab and saves a picture of it (the website's screenshots).
 static int saveWindowSnapshot (const juce::File& file, const juce::StringArray& options)
 {
@@ -379,6 +387,16 @@ static int saveWindowSnapshot (const juce::File& file, const juce::StringArray& 
         }
         processor.setDrawnTable (frames, "My drawing");
     }
+    for (auto& option : options)
+        if (option.startsWith ("preset="))
+            for (int i = 0; i < (int) FactoryPresets::list().size(); ++i)
+                if (option.fromFirstOccurrenceOf ("preset=", false, false) == FactoryPresets::list()[(size_t) i].name)
+                    processor.loadFactoryPreset (i);
+    if (options.contains ("surprise"))
+    {
+        juce::Random random (7);
+        processor.loadSurprise (random);
+    }
     processor.getKeyboardState().noteOn (1, 60, 0.8f); // a C major chord held on the piano
     processor.getKeyboardState().noteOn (1, 64, 0.8f);
     processor.getKeyboardState().noteOn (1, 67, 0.8f);
@@ -386,12 +404,17 @@ static int saveWindowSnapshot (const juce::File& file, const juce::StringArray& 
     // The editor opens on the tab and look saved in the settings, so set those for the picture and put them back after.
     const auto previousPage = Settings::loadPage();
     const auto previousLook = Settings::loadLook();
+    const auto previousScale = Settings::loadWindowScale();
     Settings::savePage (page);
     Settings::saveLook (daylight ? Theme::Look::daylight : Theme::Look::dark);
+    Settings::saveWindowScale (1.0f);
 
     int result = 1;
     {
         LapizAudioProcessorEditor editor (processor);
+        for (auto& option : options)
+            if (option.startsWith ("size="))  // e.g. size=150 opens the window at 150 %
+                editor.setScale (option.fromFirstOccurrenceOf ("size=", false, false).getFloatValue() / 100.0f);
         juce::Image image (juce::Image::ARGB, juce::roundToInt ((float) editor.getWidth() * scale),
                            juce::roundToInt ((float) editor.getHeight() * scale), true);
         {
@@ -406,6 +429,7 @@ static int saveWindowSnapshot (const juce::File& file, const juce::StringArray& 
 
     Settings::savePage (previousPage);
     Settings::saveLook (previousLook);
+    Settings::saveWindowScale (previousScale);
     Theme::currentLook() = previousLook;
     return result;
 }
@@ -972,6 +996,83 @@ int main (int argc, char** argv)
                    "Init puts every control back to its default");
         }
         file.deleteFile();
+    }
+
+    // ---- Surprise me ----
+    {
+        // Plays a chord on many surprise sounds (each from its own seed, so the test is repeatable)
+        // and checks every one is audible, below full scale and named like a preset.
+        constexpr int count = 250;
+        bool allPlay = true, namesOk = true;
+        float loudestPeak = 0.0f;
+        double quietestRms = 1.0;
+        juce::StringArray names;
+        for (int seed = 1; seed <= count; ++seed)
+        {
+            juce::Random random (seed);
+            const auto sound = Surprise::make (random);
+            for (auto& preset : FactoryPresets::list())
+                namesOk = namesOk && sound.name != preset.name;
+            names.addIfNotAlreadyThere (sound.name);
+
+            const auto level = playChord ([seed] (LapizAudioProcessor& p) { juce::Random r (seed); p.loadSurprise (r); });
+            const bool ok = level.finite && level.rms > 0.005 && level.peak < 1.0f && level.loadedName == sound.name;
+            if (! ok)
+                std::cout << "      surprise " << seed << " (" << sound.name << "): peak " << level.peak << ", rms " << level.rms << std::endl;
+            allPlay = allPlay && ok;
+            loudestPeak = std::max (loudestPeak, level.peak);
+            quietestRms = std::min (quietestRms, level.rms);
+        }
+        std::cout << "      " << count << " surprises: loudest peak " << loudestPeak << ", quietest rms " << quietestRms
+                  << ", " << names.size() << " different names" << std::endl;
+        check (allPlay, "every surprise sound is audible and below full scale");
+        check (namesOk, "a surprise sound never takes a built-in preset's name");
+        check (names.size() > count / 2, "surprise sounds get lots of different names");
+
+        LapizAudioProcessor processor;
+        processor.loadSurprise();
+        const auto first = processor.getPresetName();
+        bool changed = false;
+        for (int i = 0; i < 5 && ! changed; ++i)
+        {
+            processor.loadSurprise();
+            changed = processor.getPresetName() != first;
+        }
+        check (changed && processor.getPresetFile() == juce::File(), "clicking Surprise again makes a different, unsaved sound");
+    }
+
+    // ---- Favorites and window size (saved settings) ----
+    {
+        const auto savedFavorites = Settings::loadFavorites();
+        const auto savedScale = Settings::loadWindowScale();
+
+        Settings::saveFavorites ({ "factory:Warm Pad", "file:C:\\Presets\\Mine.lapiz" });
+        const auto loaded = Settings::loadFavorites();
+        check (loaded.size() == 2 && loaded[0] == "factory:Warm Pad" && loaded[1] == "file:C:\\Presets\\Mine.lapiz",
+               "favorites are saved and read back in order");
+        Settings::saveFavorites ({});
+        check (Settings::loadFavorites().isEmpty(), "with no favorites, the list is empty");
+
+        Settings::saveWindowScale (1.5f);
+        check (std::abs (Settings::loadWindowScale() - 1.5f) < 1.0e-4f, "the window size is remembered");
+        Settings::saveWindowScale (9.0f);
+        check (std::abs (Settings::loadWindowScale() - 2.0f) < 1.0e-4f, "a saved window size is kept between 75 % and 200 %");
+
+        {
+            Settings::saveWindowScale (1.0f);
+            LapizAudioProcessor processor;
+            LapizAudioProcessorEditor editor (processor);
+            check (editor.getWidth() == 900 && editor.getHeight() == 644, "the window opens at 900 x 644 at 100 %");
+            editor.setScale (1.5f);
+            check (editor.getWidth() == 1350 && editor.getHeight() == 966, "at 150 % the window is 1350 x 966");
+            editor.setScale (5.0f);
+            check (editor.getWidth() == 1800 && editor.getHeight() == 1288, "the window is never bigger than 200 %");
+            editor.setScale (0.1f);
+            check (editor.getWidth() == 675 && editor.getHeight() == 483, "the window is never smaller than 75 %");
+        }
+
+        Settings::saveFavorites (savedFavorites);
+        Settings::saveWindowScale (savedScale);
     }
 
     // ---- On-screen piano ----

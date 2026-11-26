@@ -12,13 +12,20 @@
 #include "UI/SimplePage.h"
 #include "UI/WavesPage.h"
 
-// The plugin window: header with tabs and the settings button, the page below it,
-// a piano keyboard, and a help bar along the bottom.
-class LapizAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::ChangeListener
+// Everything in the plugin window: header with tabs and the settings button, the page below it,
+// a piano keyboard, and a help bar along the bottom. It's always laid out at its design size
+// (900 x 644); the editor below scales it to whatever size the window is.
+class LapizView : public juce::Component, private juce::ChangeListener
 {
 public:
-    explicit LapizAudioProcessorEditor (LapizAudioProcessor&);
-    ~LapizAudioProcessorEditor() override;
+    static constexpr int designWidth = 900, designHeight = 644;
+
+    explicit LapizView (LapizAudioProcessor&);
+    ~LapizView() override;
+
+    // Called with a window scale (1.0 = 100 %) when one is chosen from the settings menu.
+    std::function<void (float)> onScaleChosen;
+    float currentScale = 1.0f;
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -60,6 +67,27 @@ private:
     AdvancedPage advancedPage;
     EffectsPage effectsPage;
     PianoKeyboard keyboard;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LapizView)
+};
+
+// The plugin window. You can resize it by dragging the bottom-right corner (or with the host's own
+// window controls), from 75 % to 200 %, or pick a size in the settings menu. It keeps its shape,
+// and the size is remembered for every LAPiZ you open.
+class LapizAudioProcessorEditor : public juce::AudioProcessorEditor
+{
+public:
+    static constexpr float minScale = 0.75f, maxScale = 2.0f;
+
+    explicit LapizAudioProcessorEditor (LapizAudioProcessor&);
+    ~LapizAudioProcessorEditor() override;
+
+    void resized() override;
+    void setScale (float scale);
+    float getScale() const;
+
+private:
+    LapizView view;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LapizAudioProcessorEditor)
 };

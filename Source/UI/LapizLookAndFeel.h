@@ -93,7 +93,8 @@ public:
         g.setColour ((on ? (module == Theme::Module::none ? p.ground : p.onAccent) : p.ink)
                          .withMultipliedAlpha (button.isEnabled() ? 1.0f : 0.4f));
         g.setFont (on ? Theme::bold (14.0f) : Theme::regular (14.0f));
-        g.drawText (button.getButtonText(), button.getLocalBounds(), juce::Justification::centred);
+        // Long names (like "Haunted Music Box" in the preset bar) squeeze a little rather than getting cut off.
+        g.drawFittedText (button.getButtonText(), button.getLocalBounds().reduced (3, 0), juce::Justification::centred, 1, 0.85f);
     }
 
     juce::Font getPopupMenuFont() override { return Theme::regular (15.0f); }

@@ -71,6 +71,8 @@ public:
     juce::String getPresetName() const;
     juce::File getPresetFile() const;                // empty for a built-in preset
     void loadFactoryPreset (int index);              // index into FactoryPresets::list()
+    void loadSurprise (juce::Random& random);        // "Surprise me": a new random but musical sound (Surprise.h)
+    void loadSurprise() { loadSurprise (surpriseRandom); }
     bool loadPresetFile (const juce::File& file);    // false if the file couldn't be read
     bool savePresetFile (const juce::File& file);    // false if the file couldn't be written
 
@@ -97,6 +99,7 @@ private:
     void publishLiveState();
 
     void installTable (std::shared_ptr<const Wavetable> newTable, TableChoice newChoice);
+    void applySound (const juce::String& name, int factoryTable, const std::vector<std::pair<juce::String, float>>& settings);
     std::unique_ptr<juce::XmlElement> createStateXml();
     bool applyStateXml (const juce::XmlElement& xml);
     void applyTableTree (const juce::ValueTree& tableTree);
@@ -119,6 +122,8 @@ private:
     std::atomic<const Wavetable*> audioTable { nullptr };
     std::atomic<bool> inBlock { false };
     const Wavetable* blockTable = nullptr; // what the voices play during the current block
+
+    juce::Random surpriseRandom; // seeded from the clock, so every click is different
 
     Lfo::Clock lfoClock;
     double lfoCycles = 0.0; // the shared LFO's position, in cycles

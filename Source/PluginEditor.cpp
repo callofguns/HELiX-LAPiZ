@@ -8,9 +8,8 @@ namespace
     const juce::String defaultHelp = "Hover over any knob or button to see what it does.";
 }
 
-LapizAudioProcessorEditor::LapizAudioProcessorEditor (LapizAudioProcessor& p)
-    : AudioProcessorEditor (&p),
-      processor (p),
+LapizView::LapizView (LapizAudioProcessor& p)
+    : processor (p),
       helpText (defaultHelp),
       presetBar (p),
       simplePage (p, [this] (juce::Component& c, const juce::String& text) { registerHelp (c, text); }),
@@ -39,10 +38,14 @@ LapizAudioProcessorEditor::LapizAudioProcessorEditor (LapizAudioProcessor& p)
     registerHelp (presetBar.getPreviousButton(), "Previous preset.");
     registerHelp (presetBar.getNextButton(), "Next preset.");
     registerHelp (presetBar.getSaveButton(), "Save: keeps the current sound as a preset in Documents\\LAPiZ\\Presets, so you can load it in any project.");
+    registerHelp (presetBar.getFavoriteButton(), "Favorite: star the current sound to put it at the top of the preset list. "
+                                                 "Click again to take it off. (A surprise sound can be starred once you've saved it.)");
+    registerHelp (presetBar.getSurpriseButton(), "Surprise me: makes a brand-new sound at random, always a musical one. "
+                                                 "Keep clicking until you hear one you like, then Save it.");
 
     settingsButton.onClick = [this] { showSettingsMenu(); };
     addAndMakeVisible (settingsButton);
-    registerHelp (settingsButton, "Settings: switch between the Dark and Daylight look, and choose whether LAPiZ updates itself. "
+    registerHelp (settingsButton, "Settings: switch between the Dark and Daylight look, pick a window size, and choose whether LAPiZ updates itself. "
                                   "Your choices are remembered for every LAPiZ you open.");
 
     addChildComponent (simplePage);
@@ -58,20 +61,19 @@ LapizAudioProcessorEditor::LapizAudioProcessorEditor (LapizAudioProcessor& p)
     showPage (lastPage == "waves" ? Page::waves : lastPage == "advanced" ? Page::advanced
             : lastPage == "effects" ? Page::effects : Page::simple);
 
-    setResizable (false, false);
-    setSize (900, 580 + keyboardHeight);
+    setSize (designWidth, designHeight);
 
     updater->addChangeListener (this);
     updater->checkAutomatically();
 }
 
-LapizAudioProcessorEditor::~LapizAudioProcessorEditor()
+LapizView::~LapizView()
 {
     updater->removeChangeListener (this);
     setLookAndFeel (nullptr);
 }
 
-void LapizAudioProcessorEditor::showSettingsMenu()
+void LapizView::showSettingsMenu()
 {
     const bool dark = Theme::currentLook() == Theme::Look::dark;
     const bool updates = Updater::isSupported();
@@ -82,6 +84,13 @@ void LapizAudioProcessorEditor::showSettingsMenu()
     menu.addItem (1, "Dark", true, dark);
     menu.addItem (2, "Daylight", true, ! dark);
 
+    // Window size. You can also drag the bottom-right corner.
+    static constexpr int sizes[] = { 75, 100, 125, 150, 200 };
+    menu.addSectionHeader ("Size");
+    for (int i = 0; i < (int) std::size (sizes); ++i)
+        menu.addItem (10 + i, juce::String (sizes[i]) + " %", true,
+                      std::abs (currentScale * 100.0f - (float) sizes[i]) < 1.0f);
+
     menu.addSectionHeader (updates ? "Updates" : "Updates (off in this build)");
     menu.addItem (3, "Update automatically", updates, updates && Settings::loadAutoUpdate());
     menu.addItem (4, status.state == Updater::State::checking ? "Checking for updates..." : "Check for updates now",
@@ -89,7 +98,7 @@ void LapizAudioProcessorEditor::showSettingsMenu()
     if (status.state == Updater::State::manual)
         menu.addItem (5, "Download LAPiZ " + status.version + " from GitHub");
 
-    juce::Component::SafePointer<LapizAudioProcessorEditor> safeThis (this);
+    juce::Component::SafePointer<LapizView> safeThis (this);
     menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&settingsButton),
                         [safeThis] (int result)
                         {
@@ -104,15 +113,17 @@ void LapizAudioProcessorEditor::showSettingsMenu()
                                 safeThis->updater->checkNow();
                             else if (result == 5)
                                 juce::URL (UpdateLogic::releasesPage).launchInDefaultBrowser();
+                            else if (result >= 10 && result < 10 + (int) std::size (sizes) && safeThis->onScaleChosen)
+                                safeThis->onScaleChosen ((float) sizes[result - 10] / 100.0f);
                         });
 }
 
-void LapizAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster*)
+void LapizView::changeListenerCallback (juce::ChangeBroadcaster*)
 {
     repaint (0, getHeight() - footerHeight, getWidth(), footerHeight);
 }
 
-juce::String LapizAudioProcessorEditor::updateText() const
+juce::String LapizView::updateText() const
 {
     const auto s = updater->getStatus();
     switch (s.state)
@@ -129,7 +140,7 @@ juce::String LapizAudioProcessorEditor::updateText() const
     }
 }
 
-void LapizAudioProcessorEditor::setLook (Theme::Look look)
+void LapizView::setLook (Theme::Look look)
 {
     Theme::currentLook() = look;
     Settings::saveLook (look);
@@ -137,13 +148,13 @@ void LapizAudioProcessorEditor::setLook (Theme::Look look)
     repaint();
 }
 
-void LapizAudioProcessorEditor::registerHelp (juce::Component& component, const juce::String& text)
+void LapizView::registerHelp (juce::Component& component, const juce::String& text)
 {
     helpTexts[&component] = text;
     component.addMouseListener (this, false);
 }
 
-void LapizAudioProcessorEditor::showPage (Page page)
+void LapizView::showPage (Page page)
 {
     simplePage.setVisible (page == Page::simple);
     wavesPage.setVisible (page == Page::waves);
@@ -159,7 +170,7 @@ void LapizAudioProcessorEditor::showPage (Page page)
                       : page == Page::effects ? "effects" : "simple");
 }
 
-void LapizAudioProcessorEditor::setHelpText (const juce::String& text)
+void LapizView::setHelpText (const juce::String& text)
 {
     if (helpText != text)
     {
@@ -168,7 +179,7 @@ void LapizAudioProcessorEditor::setHelpText (const juce::String& text)
     }
 }
 
-void LapizAudioProcessorEditor::mouseEnter (const juce::MouseEvent& e)
+void LapizView::mouseEnter (const juce::MouseEvent& e)
 {
     auto found = helpTexts.find (e.eventComponent);
     if (found != helpTexts.end())
@@ -178,7 +189,7 @@ void LapizAudioProcessorEditor::mouseEnter (const juce::MouseEvent& e)
     }
 }
 
-void LapizAudioProcessorEditor::mouseExit (const juce::MouseEvent& e)
+void LapizView::mouseExit (const juce::MouseEvent& e)
 {
     // Only clear the text if it belongs to the control the mouse just left.
     if (e.eventComponent == helpOwner)
@@ -188,7 +199,7 @@ void LapizAudioProcessorEditor::mouseExit (const juce::MouseEvent& e)
     }
 }
 
-void LapizAudioProcessorEditor::paint (juce::Graphics& g)
+void LapizView::paint (juce::Graphics& g)
 {
     const auto& p = Theme::get();
     g.fillAll (p.ground);
@@ -223,20 +234,20 @@ void LapizAudioProcessorEditor::paint (juce::Graphics& g)
     g.drawFittedText (helpText, footer, juce::Justification::centredLeft, 2);
 }
 
-void LapizAudioProcessorEditor::resized()
+void LapizView::resized()
 {
     auto area = getLocalBounds();
 
     auto header = area.removeFromTop (headerHeight).reduced (20, 12);
     settingsButton.setBounds (header.removeFromRight (36));
     header.removeFromRight (12);
-    effectsTab.setBounds (header.removeFromRight (100));
+    effectsTab.setBounds (header.removeFromRight (86));
     header.removeFromRight (6);
-    advancedTab.setBounds (header.removeFromRight (100));
+    advancedTab.setBounds (header.removeFromRight (86));
     header.removeFromRight (6);
-    wavesTab.setBounds (header.removeFromRight (100));
+    wavesTab.setBounds (header.removeFromRight (86));
     header.removeFromRight (6);
-    simpleTab.setBounds (header.removeFromRight (100));
+    simpleTab.setBounds (header.removeFromRight (86));
 
     // The preset bar sits between the LAPiZ name and the tabs.
     header.removeFromLeft (110);
@@ -249,4 +260,44 @@ void LapizAudioProcessorEditor::resized()
     wavesPage.setBounds (area);
     advancedPage.setBounds (area);
     effectsPage.setBounds (area);
+}
+
+//==============================================================================
+LapizAudioProcessorEditor::LapizAudioProcessorEditor (LapizAudioProcessor& p)
+    : AudioProcessorEditor (&p), view (p)
+{
+    addAndMakeVisible (view);
+    view.onScaleChosen = [this] (float scale) { setScale (scale); };
+
+    setResizable (true, true);
+    setResizeLimits (juce::roundToInt (LapizView::designWidth * minScale), juce::roundToInt (LapizView::designHeight * minScale),
+                     juce::roundToInt (LapizView::designWidth * maxScale), juce::roundToInt (LapizView::designHeight * maxScale));
+    if (auto* constrainer = getConstrainer())
+        constrainer->setFixedAspectRatio ((double) LapizView::designWidth / (double) LapizView::designHeight);
+
+    setScale (Settings::loadWindowScale());
+}
+
+LapizAudioProcessorEditor::~LapizAudioProcessorEditor()
+{
+    Settings::saveWindowScale (getScale());
+}
+
+float LapizAudioProcessorEditor::getScale() const
+{
+    return (float) getWidth() / (float) LapizView::designWidth;
+}
+
+void LapizAudioProcessorEditor::setScale (float scale)
+{
+    scale = juce::jlimit (minScale, maxScale, scale);
+    setSize (juce::roundToInt (LapizView::designWidth * scale), juce::roundToInt (LapizView::designHeight * scale));
+}
+
+void LapizAudioProcessorEditor::resized()
+{
+    const auto scale = getScale();
+    view.setBounds (0, 0, LapizView::designWidth, LapizView::designHeight);
+    view.setTransform (juce::AffineTransform::scale (scale));
+    view.currentScale = scale;
 }

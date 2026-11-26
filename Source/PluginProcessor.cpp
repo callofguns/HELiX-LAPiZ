@@ -1,4 +1,5 @@
 #include "PluginProcessor.h"
+#include "Surprise.h"
 #include "PluginEditor.h"
 #include "FactoryPresets.h"
 #include "FactoryTables.h"
@@ -532,21 +533,36 @@ void LapizAudioProcessor::loadFactoryPreset (int index)
     const auto& presets = FactoryPresets::list();
     const auto& preset = presets[(size_t) juce::jlimit (0, (int) presets.size() - 1, index)];
 
+    std::vector<std::pair<juce::String, float>> settings;
+    for (auto& [id, value] : preset.settings)
+        settings.emplace_back (id, value);
+    applySound (preset.name, preset.table, settings);
+}
+
+void LapizAudioProcessor::loadSurprise (juce::Random& random)
+{
+    const auto sound = Surprise::make (random);
+    applySound (sound.name, sound.table, sound.settings);
+}
+
+void LapizAudioProcessor::applySound (const juce::String& name, int factoryTable,
+                                      const std::vector<std::pair<juce::String, float>>& settings)
+{
     // Every control goes back to its default first, so nothing is left over from the last sound.
     for (auto* param : getParameters())
         if (auto* ranged = dynamic_cast<juce::RangedAudioParameter*> (param))
             ranged->setValueNotifyingHost (ranged->getDefaultValue());
 
-    for (auto& [id, value] : preset.settings)
+    for (auto& [id, value] : settings)
         if (auto* param = parameters.getParameter (id))
             param->setValueNotifyingHost (param->convertTo0to1 (value));
 
     {
         const juce::ScopedLock lock (tableLock);
-        presetName = preset.name;
+        presetName = name;
         presetFile = juce::File();
     }
-    selectFactoryTable (preset.table); // also tells the interface to refresh
+    selectFactoryTable (factoryTable); // also tells the interface to refresh
 }
 
 bool LapizAudioProcessor::loadPresetFile (const juce::File& file)
