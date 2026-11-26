@@ -1,24 +1,86 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "Settings.h"
 #include "Theme.h"
 #include "../FactoryPresets.h"
 #include "../PluginProcessor.h"
 
+// A small square button with a drawn icon: a star (filled when it's on) or a die.
+class IconButton : public juce::Button
+{
+public:
+    enum class Icon { star, die };
+
+    IconButton (const juce::String& name, Icon iconToDraw) : juce::Button (name), icon (iconToDraw) {}
+
+    void paintButton (juce::Graphics& g, bool highlighted, bool down) override
+    {
+        const auto& p = Theme::get();
+        const auto r = getLocalBounds().toFloat().reduced (0.5f);
+        const float alpha = isEnabled() ? 1.0f : 0.35f;
+
+        if ((highlighted || down) && isEnabled())
+        {
+            g.setColour (p.well);
+            g.fillRoundedRectangle (r, 6.0f);
+        }
+        g.setColour (p.edge);
+        g.drawRoundedRectangle (r, 6.0f, 1.0f);
+
+        const auto c = r.getCentre();
+        const float size = juce::jmin (r.getWidth(), r.getHeight()) * 0.3f;
+        const auto ink = (highlighted || down ? p.ink : p.soft).withMultipliedAlpha (alpha);
+
+        if (icon == Icon::star)
+        {
+            juce::Path star;
+            star.addStar (c, 5, size * 0.42f, size, 0.0f);
+            if (getToggleState())
+            {
+                g.setColour (p.ink.withMultipliedAlpha (alpha));
+                g.fillPath (star);
+            }
+            else
+            {
+                g.setColour (ink);
+                g.strokePath (star, juce::PathStrokeType (1.5f, juce::PathStrokeType::curved));
+            }
+        }
+        else
+        {
+            // A die showing five.
+            const auto face = juce::Rectangle<float> (size * 1.9f, size * 1.9f).withCentre (c);
+            g.setColour (ink);
+            g.drawRoundedRectangle (face, 3.0f, 1.5f);
+            const float pip = size * 0.3f, offset = face.getWidth() * 0.26f;
+            for (auto [dx, dy] : { std::pair { -1, -1 }, { 1, -1 }, { 0, 0 }, { -1, 1 }, { 1, 1 } })
+                g.fillEllipse (juce::Rectangle<float> (pip, pip).withCentre (c.translated ((float) dx * offset, (float) dy * offset)));
+        }
+    }
+
+private:
+    Icon icon;
+};
+
 // Shows which preset (whole sound) is loaded. Click the name for the full list, use the arrows
-// to step through the built-in presets and your saved ones, or Save to keep the current sound.
+// to step through the built-in presets and your saved ones, star a preset to add it to your
+// favorites, roll the die for a surprise sound, or Save to keep the current sound.
 class PresetBar : public juce::Component, private juce::ChangeListener
 {
 public:
     explicit PresetBar (LapizAudioProcessor& p) : processor (p)
     {
-        for (auto* b : { &previous, &next, &nameButton, &saveButton })
+        for (juce::Component* b : { (juce::Component*) &previous, (juce::Component*) &next, (juce::Component*) &nameButton,
+                                    (juce::Component*) &favoriteButton, (juce::Component*) &surpriseButton, (juce::Component*) &saveButton })
             addAndMakeVisible (b);
 
-        previous.onClick   = [this] { step (-1); };
-        next.onClick       = [this] { step (1); };
-        nameButton.onClick = [this] { showList(); };
-        saveButton.onClick = [this] { save(); };
+        previous.onClick       = [this] { step (-1); };
+        next.onClick           = [this] { step (1); };
+        nameButton.onClick     = [this] { showList(); };
+        saveButton.onClick     = [this] { save(); };
+        favoriteButton.onClick = [this] { toggleFavorite(); };
+        surpriseButton.onClick = [this] { processor.loadSurprise(); };
 
         processor.addChangeListener (this);
         refresh();
@@ -31,11 +93,17 @@ public:
     juce::Button& getPreviousButton() { return previous; }
     juce::Button& getNextButton()     { return next; }
     juce::Button& getSaveButton()     { return saveButton; }
+    juce::Button& getFavoriteButton() { return favoriteButton; }
+    juce::Button& getSurpriseButton() { return surpriseButton; }
 
     void resized() override
     {
         auto area = getLocalBounds();
-        saveButton.setBounds (area.removeFromRight (58));
+        saveButton.setBounds (area.removeFromRight (52));
+        area.removeFromRight (6);
+        surpriseButton.setBounds (area.removeFromRight (getHeight()));
+        area.removeFromRight (4);
+        favoriteButton.setBounds (area.removeFromRight (getHeight()));
         area.removeFromRight (8);
         previous.setBounds (area.removeFromLeft (30));
         next.setBounds (area.removeFromRight (30));
@@ -84,6 +152,57 @@ private:
                                                     "LAPiZ couldn't read " + e.file.getFullPathName());
     }
 
+    // How the current preset is remembered among your favorites; empty if it can't be starred
+    // (a surprise sound that hasn't been saved yet).
+    juce::String currentKey() const
+    {
+        const auto file = processor.getPresetFile();
+        if (file != juce::File())
+            return "file:" + file.getFullPathName();
+        const auto name = processor.getPresetName();
+        for (auto& preset : FactoryPresets::list())
+            if (name == preset.name)
+                return juce::String ("factory:") + preset.name;
+        return {};
+    }
+
+    // Your favorites that still exist, in the order you starred them.
+    static std::vector<std::pair<juce::String, Entry>> favoriteEntries()
+    {
+        std::vector<std::pair<juce::String, Entry>> found;
+        for (auto& key : Settings::loadFavorites())
+        {
+            if (key.startsWith ("factory:"))
+            {
+                const auto name = key.fromFirstOccurrenceOf ("factory:", false, false);
+                for (int i = 0; i < (int) FactoryPresets::list().size(); ++i)
+                    if (name == FactoryPresets::list()[(size_t) i].name)
+                        found.push_back ({ name, Entry { i, {} } });
+            }
+            else if (key.startsWith ("file:"))
+            {
+                const juce::File file (key.fromFirstOccurrenceOf ("file:", false, false));
+                if (file.existsAsFile())
+                    found.push_back ({ file.getFileNameWithoutExtension(), Entry { -1, file } });
+            }
+        }
+        return found;
+    }
+
+    void toggleFavorite()
+    {
+        const auto key = currentKey();
+        if (key.isEmpty())
+            return;
+        auto favorites = Settings::loadFavorites();
+        if (favorites.contains (key))
+            favorites.removeString (key);
+        else
+            favorites.add (key);
+        Settings::saveFavorites (favorites);
+        refresh();
+    }
+
     void step (int delta)
     {
         const auto all = entries();
@@ -101,6 +220,21 @@ private:
         // Built-in presets go in one submenu per category (they're listed category by category),
         // except those with no category, like Init, which sit at the top.
         juce::PopupMenu menu, categoryMenu;
+
+        // Your favorites come first. Their menu ids start at favoriteIdBase.
+        const auto favorites = favoriteEntries();
+        const auto nowKey = currentKey();
+        menu.addSectionHeader ("Favorites");
+        if (favorites.empty())
+            menu.addItem (-3, "Click the star to add the current sound here", false, false);
+        for (size_t i = 0; i < favorites.size(); ++i)
+        {
+            const auto& e = favorites[i].second;
+            const auto key = e.factoryIndex >= 0 ? juce::String ("factory:") + FactoryPresets::list()[(size_t) e.factoryIndex].name
+                                                 : "file:" + e.file.getFullPathName();
+            menu.addItem (favoriteIdBase + (int) i, favorites[i].first, true, key == nowKey);
+        }
+        menu.addSectionHeader ("All sounds");
         juce::String category;
         bool categoryTicked = false;
         bool userHeaderShown = false;
@@ -158,7 +292,7 @@ private:
 
         juce::Component::SafePointer<PresetBar> safeThis (this);
         menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&nameButton),
-                            [safeThis, all] (int result)
+                            [safeThis, all, favorites] (int result)
                             {
                                 if (safeThis == nullptr)
                                     return;
@@ -166,6 +300,10 @@ private:
                                 {
                                     LapizAudioProcessor::presetFolder().createDirectory();
                                     LapizAudioProcessor::presetFolder().startAsProcess();
+                                }
+                                else if (result >= favoriteIdBase && result < favoriteIdBase + (int) favorites.size())
+                                {
+                                    safeThis->choose (favorites[(size_t) (result - favoriteIdBase)].second);
                                 }
                                 else if (result > 0 && result <= (int) all.size())
                                 {
@@ -203,11 +341,17 @@ private:
     void refresh()
     {
         nameButton.setButtonText (processor.getPresetName());
+        const auto key = currentKey();
+        favoriteButton.setEnabled (key.isNotEmpty());
+        favoriteButton.setToggleState (key.isNotEmpty() && Settings::loadFavorites().contains (key), juce::dontSendNotification);
     }
 
     void changeListenerCallback (juce::ChangeBroadcaster*) override { refresh(); }
 
     LapizAudioProcessor& processor;
+    static constexpr int favoriteIdBase = 100000;
+
     juce::TextButton previous { "<" }, next { ">" }, nameButton, saveButton { "Save" };
+    IconButton favoriteButton { "Favorite", IconButton::Icon::star }, surpriseButton { "Surprise me", IconButton::Icon::die };
     std::unique_ptr<juce::FileChooser> chooser;
 };

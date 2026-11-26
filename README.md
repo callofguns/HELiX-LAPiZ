@@ -9,6 +9,8 @@ plain-English controls, hover help on everything and live visual feedback.
 - **Effects** tab: distortion, chorus, ping-pong delay and reverb.
 - **Piano**: a keyboard along the bottom of the window. Click or drag across the keys to play without a MIDI keyboard; notes from FL Studio light up on it. Middle C is C5, as in FL Studio.
 - **Presets**: 102 built-in sounds, soft and magical, mostly pads and arps; save or load your own (Documents\LAPiZ\Presets).
+  Star the ones you like to find them at the top of the list, or roll the die for **Surprise me**: a brand-new random sound, always a musical one.
+- **Any size**: drag the bottom-right corner, or pick 75 % to 200 % in the settings menu. LAPiZ remembers your size.
 
 ## Installing
 

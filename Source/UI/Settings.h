@@ -71,4 +71,35 @@ namespace Settings
         file.setValue ("lastUpdateCheck", juce::String (when));
         file.saveIfNeeded();
     }
+
+    // How big the window is: 1.0 = 100 % (900 x 644). Shared by every LAPiZ you open.
+    inline float loadWindowScale()
+    {
+        juce::PropertiesFile file (fileOptions());
+        return juce::jlimit (0.75f, 2.0f, (float) file.getDoubleValue ("windowScale", 1.0));
+    }
+
+    inline void saveWindowScale (float scale)
+    {
+        juce::PropertiesFile file (fileOptions());
+        file.setValue ("windowScale", (double) scale);
+        file.saveIfNeeded();
+    }
+
+    // Starred presets, so they're easy to find. A built-in preset is stored as "factory:<name>",
+    // one of yours as "file:<full path>".
+    inline juce::StringArray loadFavorites()
+    {
+        juce::PropertiesFile file (fileOptions());
+        auto favorites = juce::StringArray::fromLines (file.getValue ("favorites"));
+        favorites.removeEmptyStrings();
+        return favorites;
+    }
+
+    inline void saveFavorites (const juce::StringArray& favorites)
+    {
+        juce::PropertiesFile file (fileOptions());
+        file.setValue ("favorites", favorites.joinIntoString ("\n"));
+        file.saveIfNeeded();
+    }
 }
