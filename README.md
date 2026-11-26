@@ -51,13 +51,14 @@ Builds on your own computer don't update themselves. Only release builds do, whi
 
 ## Releasing a new version
 
-1. Bump the version in three places: `VERSION` in `CMakeLists.txt` (e.g. `1.2.0`), `versionTag` in
-   `Source/Version.h` (`v1.2`), and the default `AppVersion` in `installer/LAPiZ.iss`.
-2. Commit and push, then either publish a release on GitHub with a new tag such as `v1.2`
-   (Releases > Draft a new release), or push the tag yourself:
+1. Bump the version: the third number for small changes and fixes (`1.2.0` → `1.2.1`), the
+   second for new features (`1.2.1` → `1.3.0`). It goes in `CMakeLists.txt`, `Source/Version.h`,
+   `installer/LAPiZ.iss` and the website; [CLAUDE.md](CLAUDE.md) lists exactly what to change.
+2. Commit and push, then either publish a release on GitHub with a matching tag, such as `v1.2.1`
+   or `v1.3` (Releases > Draft a new release), or push the tag yourself:
 
-       git tag v1.2
-       git push origin v1.2
+       git tag v1.2.1
+       git push origin v1.2.1
 
 GitHub Actions (`.github/workflows/release.yml`) then builds and tests LAPiZ, makes the installer
 and the update zip, and adds them to the GitHub Release along with an `update.json`. Every

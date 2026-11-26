@@ -9,7 +9,7 @@
 ; and LAPiZ's updater (Source/Updater.cpp) uses it to find where the standalone app is installed.
 
 #ifndef AppVersion
-  #define AppVersion "1.2.0"
+  #define AppVersion "1.2.1"
 #endif
 #define Artefacts "..\build\Lapiz_artefacts\Release"
 
