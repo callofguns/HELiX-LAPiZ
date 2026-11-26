@@ -32,7 +32,7 @@ namespace Theme
     inline const Palette daylightPalette {
         juce::Colour (0xffdfe5ec), juce::Colour (0xfff8fafc), juce::Colour (0xffeef2f6),
         juce::Colour (0xffc9d2dc), juce::Colour (0xff1c2330), juce::Colour (0xff5d6878),
-        juce::Colour (0xff066b67), juce::Colour (0xff5b47d6), juce::Colour (0xffd23f63), juce::Colour (0xffa16207), juce::Colour (0xff1f6fd1),
+        juce::Colour (0xff066b67), juce::Colour (0xff5b47d6), juce::Colour (0xffc33a5c), juce::Colour (0xffa16207), juce::Colour (0xff1f6fd1),
         juce::Colour (0xffffffff)
     };
 
