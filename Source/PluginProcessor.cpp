@@ -234,6 +234,7 @@ void LapizAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     blockTable = audioTable.load();
 
     advanceLfoClock (buffer.getNumSamples());
+    keyboardState.processNextMidiBuffer (midi, 0, buffer.getNumSamples(), true);
     synth.renderNextBlock (buffer, midi, 0, buffer.getNumSamples());
     publishLiveState();
     analogSaturator.process (buffer, parameters.getRawParameterValue ("analog")->load());

@@ -7,6 +7,7 @@ plain-English controls, hover help on everything and live visual feedback.
 - **Waves** tab: draw your own wavetables with the mouse, blend between keyframes, save them as .wav.
 - **Advanced** tab: filter envelope, an LFO ("Wobble") and unison ("Thickness": up to 8 detuned copies per note).
 - **Effects** tab: distortion, chorus, ping-pong delay and reverb.
+- **Piano**: a keyboard along the bottom of the window. Click or drag across the keys to play without a MIDI keyboard; notes from FL Studio light up on it. Middle C is C5, as in FL Studio.
 - **Presets**: 102 built-in sounds, soft and magical, mostly pads and arps; save or load your own (Documents\LAPiZ\Presets).
 
 ## Installing

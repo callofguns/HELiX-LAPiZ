@@ -30,7 +30,7 @@ public:
     ~LapizAudioProcessor() override = default;
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
-    void releaseResources() override {}
+    void releaseResources() override { keyboardState.reset(); }
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
@@ -48,6 +48,9 @@ public:
     // Used by the interface to attach knobs and draw the live visuals.
     juce::AudioProcessorValueTreeState& getState() { return parameters; }
     const LiveState& getLive() const { return live; }
+
+    // The on-screen piano: its notes are mixed in with the host's, and the host's light up its keys.
+    juce::MidiKeyboardState& getKeyboardState() { return keyboardState; }
 
     // Wavetables. Call these from the interface (not from the audio thread).
     std::shared_ptr<const Wavetable> getTable() const;
@@ -102,6 +105,7 @@ private:
     static constexpr int numVoices = 8;
 
     juce::Synthesiser synth;
+    juce::MidiKeyboardState keyboardState;
     juce::AudioProcessorValueTreeState parameters;
 
     // The current wavetable. The audio thread only ever reads audioTable, once per block.
