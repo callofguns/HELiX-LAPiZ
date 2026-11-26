@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap">
 <style>
-/* Layout: one column of stone-coloured bands; the hero pairs the wordmark with a live wavetable you can scan. */
+/* Layout: one column of stone-colored bands; the hero pairs the wordmark with a live wavetable you can scan. */
 :root {
   /* Dark-first: lapis lazuli ground, calcite-white text, pyrite-gold accent. */
   --stone: #0f1d4a;        /* page ground: deep lapis */
@@ -19,7 +19,7 @@
   --mist: #a9b4d8;         /* secondary text */
   --pyrite: #e2b84a;       /* accent: the gold flecks in lapis */
   --ultramarine: #6f8bff;  /* the wave line */
-  /* The plugin's own module colours (Source/UI/Theme.h): one per step of the sound. */
+  /* The plugin's own module colors (Source/UI/Theme.h): one per step of the sound. */
   --sound: #43c6c0; --tone: #a193ff; --shape: #ff8fa3; --motion: #f2b84b; --effects: #6bb8ff;
   /* The plugin window itself, for the bottom-bar replica. */
   --plugin-ground: #222936; --plugin-edge: #3a4456; --plugin-ink: #eef1f6; --plugin-soft: #9aa4b5; --plugin-news: #43c6c0;
@@ -112,7 +112,7 @@ input[type="range"] { width: 100%; accent-color: var(--pyrite); }
 .shape-names { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--mist); padding-inline: 2px; }
 .shape-names span.on { color: var(--pyrite); font-weight: 700; }
 
-/* ---- Plain names, laid out like the plugin's knobs and coloured by module ---- */
+/* ---- Plain names, laid out like the plugin's knobs and colored by module ---- */
 .modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px; }
 .module { border: 1px solid var(--vein); border-top: 3px solid var(--c); border-radius: 12px; padding: 18px 20px 20px; background: var(--stone-deep); }
 .module h3 { color: var(--c); font-size: 1.05rem; }
@@ -121,7 +121,7 @@ input[type="range"] { width: 100%; accent-color: var(--pyrite); }
 .module dl div { flex: 0 1 96px; display: grid; align-content: start; justify-items: center; text-align: center; gap: 2px; }
 .module dt { font-weight: 700; line-height: 1.25; margin-top: 8px; }
 .module dd { margin: 0; color: var(--mist); font-size: 0.85rem; line-height: 1.3; }
-/* A knob: a 270-degree track with the value arc in the module colour. */
+/* A knob: a 270-degree track with the value arc in the module color. */
 .knob {
   width: 46px; height: 46px; border-radius: 50%;
   background: conic-gradient(from 225deg, var(--c) calc(var(--v) * 270deg), var(--vein) 0 270deg, transparent 0);
@@ -161,7 +161,7 @@ input[type="range"] { width: 100%; accent-color: var(--pyrite); }
 .steps b { color: var(--calcite); }
 .note { margin-top: 24px; color: var(--mist); font-size: 0.95rem; }
 
-/* A replica of the bottom of the LAPiZ window, in the plugin's own colours and font. */
+/* A replica of the bottom of the LAPiZ window, in the plugin's own colors and font. */
 .plugin-bar { margin: 0 0 32px; max-width: 900px; }
 .plugin-bar .bar {
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 24px;
@@ -216,7 +216,7 @@ footer .wrap { display: grid; gap: 8px; }
     <div class="wrap">
       <div class="section-head">
         <h2>Every knob says what it does</h2>
-        <p class="lede">Controls have a plain name on top and the real synth term underneath, so you can start making sounds right away and learn the proper words as you go. They're coloured by where they sit in the sound, the same as in LAPiZ, so you can follow it from left to right. Hover over anything in LAPiZ and the help bar explains it.</p>
+        <p class="lede">Controls have a plain name on top and the real synth term underneath, so you can start making sounds right away and learn the proper words as you go. They're colored by where they sit in the sound, the same as in LAPiZ, so you can follow it from left to right. Hover over anything in LAPiZ and the help bar explains it.</p>
       </div>
       <div class="modules">
         <div class="module" style="--c: var(--sound)">
@@ -367,7 +367,7 @@ footer .wrap { display: grid; gap: 8px; }
     p => p < 0.5 ? 1 : -1
   ];
 
-  // Wave Shape blends smoothly between neighbouring shapes, like the synth does.
+  // Wave Shape blends smoothly between neighboring shapes, like the synth does.
   function sample(position, p) {
     const x = position * (shapes.length - 1);
     const i = Math.min(Math.floor(x), shapes.length - 2);
@@ -375,7 +375,7 @@ footer .wrap { display: grid; gap: 8px; }
     return shapes[i](p) * (1 - t) + shapes[i + 1](p) * t;
   }
 
-  function colour(name) {
+  function color(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
 
@@ -387,7 +387,7 @@ footer .wrap { display: grid; gap: 8px; }
     const layers = 16;
     const depthX = w * 0.28, depthY = h * 0.30;
     const waveW = w - depthX - 70, amp = h * 0.17;
-    const mist = colour("--mist"), line = colour("--ultramarine"), gold = colour("--pyrite");
+    const mist = color("--mist"), line = color("--ultramarine"), gold = color("--pyrite");
 
     // Back to front: each layer is one frame of the table.
     for (let l = layers - 1; l >= 0; l--) {

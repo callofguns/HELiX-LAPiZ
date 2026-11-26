@@ -3,6 +3,13 @@
 A wavetable synth for FL Studio (VST3, Windows) built with JUCE. See README.md for building,
 testing and releasing.
 
+## Spelling
+
+The owner is in the US: use US spelling in everything people read, including the plugin's text,
+the website, the README, release notes and pull requests ("color", "center", "favorite",
+"behavior", "gray", "analog"). Code that calls JUCE keeps JUCE's names (`juce::Colour`,
+`Colours::`), since those can't change.
+
 ## Version numbers
 
 Every change that reaches users bumps the version. Pick the part to bump by the size of the change:
