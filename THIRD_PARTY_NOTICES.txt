@@ -7,7 +7,7 @@ Each part keeps its own licence, reproduced in full in this file. All of them al
 use in an AGPLv3 program.
 
   JUCE 9.0.4            AGPL-3.0-only (JUCE is also available under a commercial licence)
-  Atkinson Hyperlegible SIL Open Font License 1.1 (font, Braille Institute of America)
+  Inter 4.1             SIL Open Font License 1.1 (font, The Inter Project Authors)
   zlib 1.3.2            Zlib
   HarfBuzz 14.2.1       MIT (Modern variant)
   SheenBidi 2.9.0       Apache-2.0
@@ -89,10 +89,10 @@ The JUCE examples are licensed under the terms of the
 
 
 ------------------------------------------------------------------------------
-Atkinson Hyperlegible font
+Inter font
 ------------------------------------------------------------------------------
 
-Copyright 2020 Braille Institute of America, Inc.
+Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
@@ -111,7 +111,7 @@ with others.
 
 The OFL allows the licensed fonts to be used, studied, modified and
 redistributed freely as long as they are not sold by themselves. The
-fonts, including any derivative works, can be bundled, embedded, 
+fonts, including any derivative works, can be bundled, embedded,
 redistributed and/or sold with any software provided that any reserved
 names are not used by derivative works. The fonts and derivatives,
 however, cannot be released under any other type of license. The
@@ -137,7 +137,7 @@ new environment.
 "Author" refers to any designer, engineer, programmer, technical
 writer or other person who contributed to the Font Software.
 
-PERMISSION & CONDITIONS
+PERMISSION AND CONDITIONS
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of the Font Software, to use, study, copy, merge, embed, modify,
 redistribute, and sell modified and unmodified copies of the Font

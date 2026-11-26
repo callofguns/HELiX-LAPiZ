@@ -3,6 +3,16 @@
 A wavetable synth for FL Studio (VST3, Windows) built with JUCE. See README.md for building,
 testing and releasing.
 
+## Fonts
+
+The owner wants Apple's SF Pro, with Inter wherever SF Pro can't be used. Apple's license only
+allows SF Pro for apps on Apple platforms, so:
+
+- **Plugin:** Inter (embedded, `Resources/Fonts/`), since LAPiZ is Windows-only.
+- **Website:** body text uses the visitor's system font first (`-apple-system`, which is SF Pro on
+  Apple devices), then Inter. Never serve SF Pro files from the site. The LAPiZ wordmark and
+  headings keep Bricolage Grotesque.
+
 ## Spelling
 
 The owner is in the US: use US spelling in everything people read, including the plugin's text,
@@ -83,6 +93,11 @@ the website changes for that release:
 
 - the version in the hero (`1.3`) and the setup file name in the install steps (`LAPiZ-1.3.0-setup.exe`);
 - any text, screenshots or sections about what the release adds or changes.
+- the tab screenshots in `docs/images/`, redrawn from the release's code so they show what people
+  will get. Build `LapizTests` and run, for each tab:
+  `LapizTests --window docs/images/<tab>.png <tab> 2x` (tabs: simple, waves, advanced, effects;
+  add `daylight` for the light look). They're 2x pictures of the 900x644 window, so the `<img>`
+  in `docs/index.html` keeps `width="900" height="644"`.
 
 The owner merges it and then creates the GitHub release. Website-only changes that aren't about an
 unreleased version (a typo, a layout fix, accessibility) can go out any time.

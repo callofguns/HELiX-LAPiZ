@@ -7,7 +7,7 @@
 <title>LAPiZ by HELiX</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap">
 <style>
 /* Layout: one column of stone-colored bands; the hero pairs the wordmark with a live wavetable you can scan. */
 :root {
@@ -24,7 +24,9 @@
   /* The plugin window itself, for the bottom-bar replica. */
   --plugin-ground: #222936; --plugin-edge: #3a4456; --plugin-ink: #eef1f6; --plugin-soft: #9aa4b5; --plugin-news: #43c6c0;
   --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* SF Pro on Apple devices (the visitor's own system font; Apple's license doesn't allow serving it),
+     Inter everywhere else. */
+  --body: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
@@ -161,12 +163,12 @@ input[type="range"] { width: 100%; accent-color: var(--pyrite); }
 .steps b { color: var(--calcite); }
 .note { margin-top: 24px; color: var(--mist); font-size: 0.95rem; }
 
-/* A replica of the bottom of the LAPiZ window, in the plugin's own colors and font. */
+/* A replica of the bottom of the LAPiZ window, in the plugin's own colors and font (Inter). */
 .plugin-bar { margin: 0 0 32px; max-width: 900px; }
 .plugin-bar .bar {
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 24px;
   background: var(--plugin-ground); border: 1px solid var(--plugin-edge); border-radius: 12px;
-  padding: 14px 20px; font-family: "Atkinson Hyperlegible", var(--body); font-size: 0.95rem; line-height: 1.4;
+  padding: 14px 20px; font-family: "Inter", var(--body); font-size: 0.95rem; line-height: 1.4;
 }
 .plugin-bar .help { color: var(--plugin-ink); }
 .plugin-bar .news { color: var(--plugin-news); font-weight: 700; }

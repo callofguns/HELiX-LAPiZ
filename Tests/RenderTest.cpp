@@ -12,6 +12,7 @@
 #include "UI/LapizLookAndFeel.h"
 #include "UI/WavesPage.h"
 #include "PluginEditor.h"
+#include "UI/Settings.h"
 
 namespace
 {
@@ -348,42 +349,78 @@ static int saveWavesSnapshot (const juce::File& file)
     return juce::PNGImageFormat().writeImageToStream (image, out) ? 0 : 1;
 }
 
-// LapizTests.exe --window <file.png> [daylight]: draws the whole plugin window and saves a picture of it.
-static int saveWindowSnapshot (const juce::File& file, bool daylight)
+// LapizTests.exe --window <file.png> [simple|waves|advanced|effects] [daylight] [2x]:
+// draws the whole plugin window on one tab and saves a picture of it (the website's screenshots).
+static int saveWindowSnapshot (const juce::File& file, const juce::StringArray& options)
 {
+    const bool daylight = options.contains ("daylight");
+    const float scale = options.contains ("2x") ? 2.0f : 1.0f;
+    juce::String page = "simple";
+    for (auto name : { "waves", "advanced", "effects" })
+        if (options.contains (name))
+            page = name;
+
     LapizAudioProcessor processor;
-    processor.getKeyboardState().noteOn (1, 60, 0.8f); // show a few keys held down
+    if (page == "waves")
+    {
+        // Show a drawing, like the Waves snapshot.
+        std::vector<Wavetable::Frame> frames;
+        for (int f = 0; f < 3; ++f)
+        {
+            Wavetable::Frame frame ((size_t) Wavetable::tableSize);
+            for (int i = 0; i < Wavetable::tableSize; ++i)
+            {
+                const float p = (float) i / (float) Wavetable::tableSize;
+                frame[(size_t) i] = f == 0 ? std::sin (juce::MathConstants<float>::twoPi * p)
+                                  : f == 1 ? (p < 0.3f ? 0.9f : p < 0.6f ? -0.4f : -0.8f + p * 0.5f)
+                                           : std::round (std::sin (juce::MathConstants<float>::twoPi * p) * 4.0f) / 4.0f;
+            }
+            frames.push_back (std::move (frame));
+        }
+        processor.setDrawnTable (frames, "My drawing");
+    }
+    processor.getKeyboardState().noteOn (1, 60, 0.8f); // a C major chord held on the piano
     processor.getKeyboardState().noteOn (1, 64, 0.8f);
     processor.getKeyboardState().noteOn (1, 67, 0.8f);
 
-    const auto previousLook = Theme::currentLook();
+    // The editor opens on the tab and look saved in the settings, so set those for the picture and put them back after.
+    const auto previousPage = Settings::loadPage();
+    const auto previousLook = Settings::loadLook();
+    Settings::savePage (page);
+    Settings::saveLook (daylight ? Theme::Look::daylight : Theme::Look::dark);
+
+    int result = 1;
     {
         LapizAudioProcessorEditor editor (processor);
-        if (daylight)
-        {
-            Theme::currentLook() = Theme::Look::daylight;
-            editor.sendLookAndFeelChange();
-        }
-        juce::Image image (juce::Image::ARGB, editor.getWidth(), editor.getHeight(), true);
+        juce::Image image (juce::Image::ARGB, juce::roundToInt ((float) editor.getWidth() * scale),
+                           juce::roundToInt ((float) editor.getHeight() * scale), true);
         {
             juce::Graphics g (image);
+            g.addTransform (juce::AffineTransform::scale (scale));
             editor.paintEntireComponent (g, true);
         }
         file.deleteFile();
         juce::FileOutputStream out (file);
-        if (! juce::PNGImageFormat().writeImageToStream (image, out))
-            return 1;
+        result = juce::PNGImageFormat().writeImageToStream (image, out) ? 0 : 1;
     }
+
+    Settings::savePage (previousPage);
+    Settings::saveLook (previousLook);
     Theme::currentLook() = previousLook;
-    return 0;
+    return result;
 }
 
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI juceInitialiser;
 
-    if ((argc == 3 || argc == 4) && juce::String (argv[1]) == "--window")
-        return saveWindowSnapshot (juce::File (juce::String (argv[2])), argc == 4 && juce::String (argv[3]) == "daylight");
+    if (argc >= 3 && juce::String (argv[1]) == "--window")
+    {
+        juce::StringArray options;
+        for (int i = 3; i < argc; ++i)
+            options.add (juce::String (argv[i]));
+        return saveWindowSnapshot (juce::File (juce::String (argv[2])), options);
+    }
 
     if (argc == 3 && juce::String (argv[1]) == "--snapshot")
         return saveWavesSnapshot (juce::File (juce::String (argv[2])));
