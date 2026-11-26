@@ -174,6 +174,11 @@ input[type="range"] { width: 100%; height: 32px; margin: 0; accent-color: var(--
 .plugin-bar .help { color: var(--plugin-ink); }
 .plugin-bar .news { color: var(--plugin-news); font-weight: 600; }
 .plugin-bar figcaption { color: var(--mist); font-size: 0.88rem; margin-top: 12px; }
+/* The Surprise me / favorites demo (made with stageshow from the plugin's own look). */
+.demo-video { margin: 0 0 40px; max-width: 720px; }
+.demo-video video { display: block; width: 100%; height: auto; border-radius: 16px; background: #0a1438; }
+.demo-video figcaption { color: var(--mist); font-size: 0.95rem; margin-top: 12px; }
+
 .update-points { margin: 0; padding-left: 1.1em; display: grid; gap: 12px; max-width: 70ch; color: var(--mist); }
 .update-points b { color: var(--calcite); }
 
@@ -292,6 +297,13 @@ footer .wrap { display: grid; gap: 8px; }
         <h2>102 sounds to start from</h2>
         <p class="lede">LAPiZ sounds soft and a little magical, and sits in the middle of the mix: mostly pads and arps, plus plucks, keys, bells, gentle leads, textures and round basses. Pick one from the preset bar at the top of the window, change anything you like, then click Save to keep your version. Your presets are saved in Documents\LAPiZ\Presets and show up in every project. Click the star to keep your favorites at the top of the list, or roll the die for <b>Surprise me</b>: a brand-new sound made at random, always a musical one.</p>
       </div>
+      <figure class="demo-video">
+        <video id="surprise-demo" muted loop playsinline preload="none" width="720" height="420"
+               poster="images/surprise-demo.jpg"
+               aria-label="LAPiZ demo: the die makes two surprise sounds, then the preset list opens with Favorites on top and the starred Moonlit Haze comes back.">
+        </video>
+        <figcaption>Roll the die for a surprise, then find your starred sounds at the top of the list</figcaption>
+      </figure>
       <div class="patches">
         <div class="patch-row"><h3>Pad<span class="count">30</span></h3><ul><li>Warm Pad</li> <li>Glass Pad</li> <li>Ultramarine</li> <li>Gold Flecks</li> <li>Moonlit Haze</li> <li>Velvet Air</li> <li>Dream Bloom</li> <li>Starlit Drift</li> <li>Slow Tide</li> <li>Cloud Walk</li> <li>Lullaby</li> <li>Hazy Memory</li> <li>Enchanted Forest</li> <li>Crystal Cavern</li> <li>Twilight</li> <li>Aurora</li> <li>Floating</li> <li>Soft Focus</li> <li>Warm Blanket</li> <li>Spellbound</li> <li>Halo</li> <li>Pulse Pad</li> <li>Breathing Pad</li> <li>Sunrise</li> <li>Night Garden</li> <li>Distant Lights</li> <li>Mist</li> <li>Ember Glow</li> <li>Fairy Dust</li> <li>Velvet Glow</li></ul></div>
         <div class="patch-row"><h3>Arp<span class="count">22</span></h3><ul><li>Crystal Steps</li> <li>Music Box</li> <li>Starfall</li> <li>Bubble Pop</li> <li>Dewdrop</li> <li>Wand Spark</li> <li>Lantern</li> <li>Ripple</li> <li>Fireflies</li> <li>Spinning Wheel</li> <li>Moon Steps</li> <li>Glitter Arp</li> <li>Silver Thread</li> <li>Clockwork</li> <li>Pixie Pluck</li> <li>Gentle Rain</li> <li>Echo Garden</li> <li>Pulse Runner</li> <li>Mirror Arp</li> <li>Daydream Arp</li> <li>Hypno</li> <li>Sapphire Run</li></ul></div>
@@ -551,6 +563,24 @@ footer .wrap { display: grid; gap: 8px; }
     });
   });
   show("simple");
+
+  // ---- Surprise me demo ----
+  // The phone version is a closer crop, not the wide one shrunk. It plays only while on
+  // screen, and with reduced motion it doesn't start on its own: the poster tells the story
+  // and the controls are there for anyone who wants to watch.
+  const demo = document.getElementById("surprise-demo");
+  const phone = window.matchMedia("(max-width: 560px)").matches;
+  demo.poster = phone ? "images/surprise-demo-phone.jpg" : "images/surprise-demo.jpg";
+  if (phone) { demo.width = 358; demo.height = 340; }
+  demo.src = phone ? "images/surprise-demo-phone.mp4" : "images/surprise-demo.mp4";
+  if (reduceMotion) {
+    demo.controls = true;
+  } else {
+    new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) demo.play().catch(() => {});
+      else demo.pause();
+    }, { threshold: 0.25 }).observe(demo);
+  }
 })();
 </script>
 </body>

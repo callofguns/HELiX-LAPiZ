@@ -1,0 +1,94 @@
+@font-face { font-family: "LZ Inter"; src: url("./Inter-Regular.ttf") format("truetype"); font-weight: 400; }
+@font-face { font-family: "LZ Inter"; src: url("./Inter-SemiBold.ttf") format("truetype"); font-weight: 600; }
+
+/* LAPiZ's own dark palette (Source/UI/Theme.h), on the website's lapis ground. */
+.lz {
+  --lz-ground: #222936; --lz-panel: #2b3342; --lz-well: #1b212b; --lz-edge: #3a4456;
+  --lz-ink: #eef1f6; --lz-soft: #9aa4b5; --lz-sound: #43c6c0; --lz-tone: #a193ff;
+  --lz-stage: #0a1438;
+}
+
+.lz .ss-stage { background: var(--lz-stage); border-radius: 16px; overflow: hidden; }
+
+/* The plugin at 1.3x its true size, inset top and left, running off the right and bottom. */
+.lz .lz-scale { position: absolute; left: 44px; top: 40px; width: 900px; height: 644px; transform: scale(1.3); transform-origin: 0 0; }
+/* Phone column: a closer crop, not a squeeze. The preset bar starts at the window's edge
+   (no wordmark, no Save) and only the Sound panel shows, so the story stays whole. */
+.lz .ss-stage[data-layout="compact"] .lz-scale { left: 20px; top: 24px; transform: scale(1.05); }
+.lz .ss-stage[data-layout="compact"] .lz-wordmark,
+.lz .ss-stage[data-layout="compact"] .lz-text-button,
+.lz .ss-stage[data-layout="compact"] .lz-panel--tone { display: none; }
+.lz .ss-stage[data-layout="compact"] .lz-menu-pop { left: 64px; }
+
+.lz .lz-win {
+  position: absolute; inset: 0; overflow: hidden; background: var(--lz-ground); border-radius: 10px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 60px rgba(0, 0, 0, 0.45);
+  font-family: "LZ Inter", system-ui, sans-serif; color: var(--lz-ink);
+}
+
+/* Header: the plugin's own chrome */
+.lz .lz-header { position: absolute; left: 30px; right: 20px; top: 12px; height: 32px; display: flex; align-items: center; gap: 20px; }
+.lz .lz-wordmark { width: 90px; font-weight: 600; font-size: 25px; letter-spacing: -0.02em; line-height: 1; }
+.lz .lz-presets { display: flex; align-items: center; gap: 4px; height: 32px; }
+.lz .lz-icon, .lz .lz-name, .lz .lz-text-button, .lz .lz-tab, .lz .lz-picker-name {
+  height: 32px; border: 1px solid var(--lz-edge); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex: none;
+}
+.lz .lz-icon { width: 30px; color: var(--lz-soft); }
+.lz .lz-icon svg { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.lz .lz-icon .lz-pip { fill: currentColor; stroke: none; }
+.lz .lz-icon[data-hover], .lz .lz-name[data-hover], .lz .lz-name[data-open] { background: var(--lz-well); color: var(--lz-ink); }
+.lz .lz-icon[data-pressed] { transform: scale(0.94); }
+.lz .lz-icon { transition: background-color 150ms, color 150ms, transform 100ms, opacity 250ms; }
+.lz .lz-presets > .lz-icon:nth-child(3) { margin-right: 4px; }
+.lz .lz-star svg[data-filled] { fill: currentColor; color: var(--lz-ink); }
+.lz .lz-star { transition: opacity 250ms; }
+.lz .lz-star[data-off] { opacity: 0.35; }
+.lz .lz-star svg path { transition: fill 200ms; }
+.lz .lz-name { width: 132px; font-size: 13.5px; transition: background-color 150ms; overflow: hidden; white-space: nowrap; }
+.lz .lz-text-button { width: 52px; font-size: 13.5px; margin-left: 2px; }
+.lz .lz-tabs { display: flex; gap: 6px; margin-left: 12px; }
+.lz .lz-tab { width: 86px; }
+.lz .lz-tab--on { background: var(--lz-ink); border-color: var(--lz-ink); }
+
+/* Panels */
+.lz .lz-panels { position: absolute; left: 16px; top: 64px; display: flex; gap: 26px; }
+.lz .lz-panel {
+  width: 272px; height: 640px; background: var(--lz-panel); border-radius: 10px; padding: 12px 14px;
+  box-shadow: inset 0 4px 0 var(--lz-sound); box-sizing: border-box;
+}
+.lz .lz-panel--tone { box-shadow: inset 0 4px 0 var(--lz-tone); }
+.lz .lz-panel-title { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; height: 34px; padding-top: 4px; }
+.lz .lz-num { color: var(--lz-sound); }
+.lz .lz-num--tone { color: var(--lz-tone); }
+.lz .lz-picker { display: flex; gap: 6px; margin-top: 6px; }
+.lz .lz-picker .lz-icon, .lz .lz-picker-name { height: 30px; }
+.lz .lz-picker-name { flex: 1; font-size: 13.5px; }
+.lz .lz-wave { margin-top: 10px; height: 640px; background: var(--lz-well); border-radius: 6px; padding: 8px 10px; box-sizing: border-box; }
+.lz .lz-wave svg { width: 100%; height: 118px; display: block; overflow: visible; }
+.lz .lz-filter svg { width: 100%; height: 150px; display: block; overflow: visible; }
+.lz .lz-grid { stroke: var(--lz-edge); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.lz .lz-wave-line { fill: none; stroke: var(--lz-sound); stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linejoin: round;
+  transition: d 600ms cubic-bezier(0.23, 1, 0.32, 1); }
+.lz .lz-knobs { display: flex; justify-content: space-around; margin-top: 16px; }
+.lz .lz-knob-slot { display: grid; justify-items: center; gap: 10px; width: 76px; }
+.lz .lz-knob circle { fill: none; stroke-width: 4; stroke-linecap: round; }
+.lz .lz-knob__track { stroke: var(--lz-edge); }
+.lz .lz-knob__value { stroke: var(--lz-sound); transition: stroke-dasharray 600ms cubic-bezier(0.23, 1, 0.32, 1); }
+.lz .lz-filter { margin-top: 10px; height: 640px; background: var(--lz-well); border-radius: 6px; padding: 10px; box-sizing: border-box; }
+.lz .lz-filter-fill { fill: rgba(161, 147, 255, 0.18); }
+.lz .lz-filter-line { fill: none; stroke: var(--lz-tone); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+
+/* The preset list, like the plugin's own popup menu */
+.lz .lz-menu-pop {
+  position: absolute; left: 174px; top: 48px; width: 196px;
+  --ss-popover-bg: var(--lz-panel); --ss-popover-shadow: 0 0 0 1px var(--lz-edge), 0 14px 32px rgba(0, 0, 0, 0.45);
+  padding: 4px; border-radius: 8px;
+}
+.lz .lz-menu { font-family: "LZ Inter", system-ui, sans-serif; --ss-row: 28px; gap: 2px; }
+.lz .lz-menu .ss-menu__item:nth-child(3) { margin-top: 6px; }
+.lz .lz-menu .ss-menu__item { color: var(--lz-ink); font-size: 13.5px; border-radius: 5px; padding: 0 10px; }
+.lz .lz-menu .ss-menu__item[data-active] { background: var(--lz-well); }
+.lz .lz-menu-head { color: var(--lz-soft); font-size: 12px; }
+.lz .lz-menu-row { display: flex; align-items: center; gap: 8px; width: 100%; }
+.lz .lz-tick svg { width: 12px; height: 12px; fill: var(--lz-ink); stroke: none; display: block; }
+.lz .lz-sub { margin-left: auto; color: var(--lz-soft); }
