@@ -7,7 +7,7 @@
 <title>LAPiZ by HELiX</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap">
 <style>
 /* Layout: one column of stone-coloured bands; the hero pairs the wordmark with a live wavetable you can scan. */
 :root {
@@ -19,6 +19,10 @@
   --mist: #a9b4d8;         /* secondary text */
   --pyrite: #e2b84a;       /* accent: the gold flecks in lapis */
   --ultramarine: #6f8bff;  /* the wave line */
+  /* The plugin's own module colours (Source/UI/Theme.h): one per step of the sound. */
+  --sound: #43c6c0; --tone: #a193ff; --shape: #ff8fa3; --motion: #f2b84b; --effects: #6bb8ff;
+  /* The plugin window itself, for the bottom-bar replica. */
+  --plugin-ground: #222936; --plugin-edge: #3a4456; --plugin-ink: #eef1f6; --plugin-soft: #9aa4b5; --plugin-news: #43c6c0;
   --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --body: "Helvetica Neue", Helvetica, Arial, sans-serif;
   color-scheme: dark;
@@ -27,11 +31,15 @@
   :root:not([data-theme="dark"]) {
     --stone: #f2f4fa; --stone-deep: #e3e8f5; --vein: #c9d1ea; --calcite: #13215a; --mist: #4a5786;
     --pyrite: #8f6a0c; --ultramarine: #2f4fd6; color-scheme: light;
+    --sound: #087a76; --tone: #5b47d6; --shape: #c33a5c; --motion: #9d6006; --effects: #1e6dce;
+    --plugin-ground: #dfe5ec; --plugin-edge: #c9d2dc; --plugin-ink: #1c2330; --plugin-soft: #4f5a6a; --plugin-news: #066560;
   }
 }
 :root[data-theme="light"] {
   --stone: #f2f4fa; --stone-deep: #e3e8f5; --vein: #c9d1ea; --calcite: #13215a; --mist: #4a5786;
   --pyrite: #8f6a0c; --ultramarine: #2f4fd6; color-scheme: light;
+  --sound: #087a76; --tone: #5b47d6; --shape: #c33a5c; --motion: #9d6006; --effects: #1e6dce;
+  --plugin-ground: #dfe5ec; --plugin-edge: #c9d2dc; --plugin-ink: #1c2330; --plugin-soft: #4f5a6a; --plugin-news: #066560;
 }
 
 body {
@@ -104,11 +112,22 @@ input[type="range"] { width: 100%; accent-color: var(--pyrite); }
 .shape-names { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--mist); padding-inline: 2px; }
 .shape-names span.on { color: var(--pyrite); font-weight: 700; }
 
-/* ---- Plain names ---- */
-.names { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 32px; margin: 0; }
-.names div { display: flex; justify-content: space-between; gap: 16px; padding-block: 12px; border-bottom: 1px solid var(--vein); }
-.names dt { font-weight: 700; }
-.names dd { margin: 0; color: var(--mist); text-align: right; }
+/* ---- Plain names, laid out like the plugin's knobs and coloured by module ---- */
+.modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px; }
+.module { border: 1px solid var(--vein); border-top: 3px solid var(--c); border-radius: 12px; padding: 18px 20px 20px; background: var(--stone-deep); }
+.module h3 { color: var(--c); font-size: 1.05rem; }
+.module h3 small { display: block; font-family: var(--body); font-weight: 400; font-size: 0.88rem; color: var(--mist); margin-top: 2px; }
+.module dl { display: flex; flex-wrap: wrap; gap: 18px 4px; margin: 18px 0 0; }
+.module dl div { flex: 0 1 96px; display: grid; align-content: start; justify-items: center; text-align: center; gap: 2px; }
+.module dt { font-weight: 700; line-height: 1.25; margin-top: 8px; }
+.module dd { margin: 0; color: var(--mist); font-size: 0.85rem; line-height: 1.3; }
+/* A knob: a 270-degree track with the value arc in the module colour. */
+.knob {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: conic-gradient(from 225deg, var(--c) calc(var(--v) * 270deg), var(--vein) 0 270deg, transparent 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5.5px));
+}
 
 /* ---- Tabs ---- */
 .tabbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
@@ -122,21 +141,36 @@ input[type="range"] { width: 100%; accent-color: var(--pyrite); }
 .tab-panel img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--vein); display: block; }
 .tab-panel ul { margin: 14px 0 0; padding-left: 1.1em; color: var(--mist); display: grid; gap: 6px; }
 
-/* ---- Presets ---- */
-.presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 24px 32px; }
-.presets h3 { color: var(--pyrite); margin-bottom: 8px; }
-.presets ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+/* ---- Presets: one row per category, names running on like a liner note ---- */
+.patches { display: grid; border-top: 1px solid var(--vein); }
+.patch-row { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 8px 24px; padding-block: 16px; border-bottom: 1px solid var(--vein); }
+.patch-row h3 { display: flex; align-items: baseline; gap: 10px; }
+.patch-row .count { font-family: var(--body); font-weight: 400; font-size: 0.88rem; color: var(--mist); font-variant-numeric: tabular-nums; }
+.patch-row ul { list-style: none; margin: 0; padding: 0; line-height: 1.75; }
+.patch-row li { display: inline; white-space: nowrap; }
+.patch-row li:not(:last-child)::after { content: "\00b7"; color: var(--mist); padding-inline: 0.55em; }
+@media (max-width: 640px) { .patch-row { grid-template-columns: minmax(0, 1fr); } }
 
 /* ---- Install ---- */
 .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; max-width: 70ch; }
 .steps li { counter-increment: step; display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 14px; align-items: baseline; }
 .steps li::before {
   content: counter(step);
-  font-family: var(--display); font-weight: 800; font-size: 1.4rem; color: var(--pyrite);
+  font-family: var(--display); font-weight: 800; font-size: 1.4rem; color: var(--mist);
 }
 .steps b { color: var(--calcite); }
 .note { margin-top: 24px; color: var(--mist); font-size: 0.95rem; }
 
+/* A replica of the bottom of the LAPiZ window, in the plugin's own colours and font. */
+.plugin-bar { margin: 0 0 32px; max-width: 900px; }
+.plugin-bar .bar {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 24px;
+  background: var(--plugin-ground); border: 1px solid var(--plugin-edge); border-radius: 12px;
+  padding: 14px 20px; font-family: "Atkinson Hyperlegible", var(--body); font-size: 0.95rem; line-height: 1.4;
+}
+.plugin-bar .help { color: var(--plugin-ink); }
+.plugin-bar .news { color: var(--plugin-news); font-weight: 700; }
+.plugin-bar figcaption { color: var(--mist); font-size: 0.88rem; margin-top: 10px; }
 .update-points { margin: 0; padding-left: 1.1em; display: grid; gap: 12px; max-width: 70ch; color: var(--mist); }
 .update-points b { color: var(--calcite); }
 
@@ -182,23 +216,48 @@ footer .wrap { display: grid; gap: 8px; }
     <div class="wrap">
       <div class="section-head">
         <h2>Every knob says what it does</h2>
-        <p class="lede">Controls have a plain name on top and the real synth term underneath, so you can start making sounds right away and learn the proper words as you go. Hover over anything in LAPiZ and the help bar explains it.</p>
+        <p class="lede">Controls have a plain name on top and the real synth term underneath, so you can start making sounds right away and learn the proper words as you go. They're coloured by where they sit in the sound, the same as in LAPiZ, so you can follow it from left to right. Hover over anything in LAPiZ and the help bar explains it.</p>
       </div>
-      <dl class="names">
-        <div><dt>Wave Shape</dt><dd>Wavetable Position</dd></div>
-        <div><dt>Brightness</dt><dd>Filter Cutoff</dd></div>
-        <div><dt>Emphasis</dt><dd>Resonance</dd></div>
-        <div><dt>Analog</dt><dd>Drift &amp; warmth</dd></div>
-        <div><dt>Fade In</dt><dd>Attack</dd></div>
-        <div><dt>Drop</dt><dd>Decay</dd></div>
-        <div><dt>Hold Level</dt><dd>Sustain</dd></div>
-        <div><dt>Fade Out</dt><dd>Release</dd></div>
-        <div><dt>Wobble</dt><dd>LFO Amount</dd></div>
-        <div><dt>Copies</dt><dd>Unison Voices</dd></div>
-        <div><dt>Grit</dt><dd>Distortion</dd></div>
-        <div><dt>Echo</dt><dd>Delay</dd></div>
-        <div><dt>Space</dt><dd>Reverb</dd></div>
-      </dl>
+      <div class="modules">
+        <div class="module" style="--c: var(--sound)">
+          <h3>Sound<small>Pick the raw tone</small></h3>
+          <dl>
+            <div><span class="knob" style="--v: 0.35" aria-hidden="true"></span><dt>Wave Shape</dt><dd>Wavetable Position</dd></div>
+            <div><span class="knob" style="--v: 0.6" aria-hidden="true"></span><dt>Copies</dt><dd>Unison Voices</dd></div>
+          </dl>
+        </div>
+        <div class="module" style="--c: var(--tone)">
+          <h3>Tone<small>Darker, brighter or warmer</small></h3>
+          <dl>
+            <div><span class="knob" style="--v: 0.7" aria-hidden="true"></span><dt>Brightness</dt><dd>Filter Cutoff</dd></div>
+            <div><span class="knob" style="--v: 0.25" aria-hidden="true"></span><dt>Emphasis</dt><dd>Resonance</dd></div>
+            <div><span class="knob" style="--v: 0.45" aria-hidden="true"></span><dt>Analog</dt><dd>Drift &amp; warmth</dd></div>
+          </dl>
+        </div>
+        <div class="module" style="--c: var(--shape)">
+          <h3>Shape<small>How each note starts and ends</small></h3>
+          <dl>
+            <div><span class="knob" style="--v: 0.15" aria-hidden="true"></span><dt>Fade In</dt><dd>Attack</dd></div>
+            <div><span class="knob" style="--v: 0.4" aria-hidden="true"></span><dt>Drop</dt><dd>Decay</dd></div>
+            <div><span class="knob" style="--v: 0.75" aria-hidden="true"></span><dt>Hold Level</dt><dd>Sustain</dd></div>
+            <div><span class="knob" style="--v: 0.5" aria-hidden="true"></span><dt>Fade Out</dt><dd>Release</dd></div>
+          </dl>
+        </div>
+        <div class="module" style="--c: var(--motion)">
+          <h3>Motion<small>A repeating movement</small></h3>
+          <dl>
+            <div><span class="knob" style="--v: 0.55" aria-hidden="true"></span><dt>Wobble</dt><dd>LFO Amount</dd></div>
+          </dl>
+        </div>
+        <div class="module" style="--c: var(--effects)">
+          <h3>Effects<small>After the synth</small></h3>
+          <dl>
+            <div><span class="knob" style="--v: 0.3" aria-hidden="true"></span><dt>Grit</dt><dd>Distortion</dd></div>
+            <div><span class="knob" style="--v: 0.45" aria-hidden="true"></span><dt>Echo</dt><dd>Delay</dd></div>
+            <div><span class="knob" style="--v: 0.65" aria-hidden="true"></span><dt>Space</dt><dd>Reverb</dd></div>
+          </dl>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -231,16 +290,16 @@ footer .wrap { display: grid; gap: 8px; }
         <h2>102 sounds to start from</h2>
         <p class="lede">LAPiZ sounds soft and a little magical, and sits in the middle of the mix: mostly pads and arps, plus plucks, keys, bells, gentle leads, textures and round basses. Pick one from the preset bar at the top of the window, change anything you like, then click Save to keep your version. Your presets are saved in Documents\LAPiZ\Presets and show up in every project.</p>
       </div>
-      <div class="presets">
-        <div><h3>Pad</h3><ul><li>Warm Pad</li><li>Glass Pad</li><li>Ultramarine</li><li>Gold Flecks</li><li>Moonlit Haze</li><li>Velvet Air</li><li>Dream Bloom</li><li>Starlit Drift</li><li>Slow Tide</li><li>Cloud Walk</li><li>Lullaby</li><li>Hazy Memory</li><li>Enchanted Forest</li><li>Crystal Cavern</li><li>Twilight</li><li>Aurora</li><li>Floating</li><li>Soft Focus</li><li>Warm Blanket</li><li>Spellbound</li><li>Halo</li><li>Pulse Pad</li><li>Breathing Pad</li><li>Sunrise</li><li>Night Garden</li><li>Distant Lights</li><li>Mist</li><li>Ember Glow</li><li>Fairy Dust</li><li>Velvet Glow</li></ul></div>
-        <div><h3>Arp</h3><ul><li>Crystal Steps</li><li>Music Box</li><li>Starfall</li><li>Bubble Pop</li><li>Dewdrop</li><li>Wand Spark</li><li>Lantern</li><li>Ripple</li><li>Fireflies</li><li>Spinning Wheel</li><li>Moon Steps</li><li>Glitter Arp</li><li>Silver Thread</li><li>Clockwork</li><li>Pixie Pluck</li><li>Gentle Rain</li><li>Echo Garden</li><li>Pulse Runner</li><li>Mirror Arp</li><li>Daydream Arp</li><li>Hypno</li><li>Sapphire Run</li></ul></div>
-        <div><h3>Pluck</h3><ul><li>Soft Pluck</li><li>Digital Pluck</li><li>Harp Glow</li><li>Kalimba Dream</li><li>Velvet Pluck</li><li>Glass Harp</li><li>Marimba Haze</li><li>Star Pluck</li><li>Felt Pluck</li><li>Woodland</li><li>Shimmer Pluck</li><li>Paper Lantern</li></ul></div>
-        <div><h3>Keys</h3><ul><li>PWM Keys</li><li>Velvet Keys</li><li>Glass Keys</li><li>Warm Tines</li><li>Hazy Keys</li><li>Lo-fi Keys</li><li>Celeste</li><li>Soft Organ</li><li>Midnight Organ</li><li>Chapel Organ</li><li>Dream Keys</li><li>Moon Keys</li></ul></div>
-        <div><h3>Bell</h3><ul><li>Fairy Bells</li><li>Glass Bells</li><li>Temple Bell</li><li>Crystal Bowl</li><li>Moon Bell</li><li>Starbells</li><li>Tiny Bells</li><li>Wind Chimes</li></ul></div>
-        <div><h3>Lead</h3><ul><li>Flute Spirit</li><li>Ocarina</li><li>Whistle</li><li>Glide Lead</li><li>Singing Saw</li><li>Lullaby Lead</li><li>Mellow Sync</li><li>Soft Square</li></ul></div>
-        <div><h3>Texture</h3><ul><li>Whispering Wind</li><li>Magic Swirl</li><li>Underwater</li><li>Spell Cast</li><li>Wishing Well</li><li>Haunted Music Box</li></ul></div>
-        <div><h3>Bass</h3><ul><li>Round Bass</li><li>Velvet Bass</li><li>Pluck Bass</li><li>Soft Reese</li></ul></div>
-        <div><h3>Start fresh</h3><ul><li>Init</li></ul></div>
+      <div class="patches">
+        <div class="patch-row"><h3>Pad<span class="count">30</span></h3><ul><li>Warm Pad</li> <li>Glass Pad</li> <li>Ultramarine</li> <li>Gold Flecks</li> <li>Moonlit Haze</li> <li>Velvet Air</li> <li>Dream Bloom</li> <li>Starlit Drift</li> <li>Slow Tide</li> <li>Cloud Walk</li> <li>Lullaby</li> <li>Hazy Memory</li> <li>Enchanted Forest</li> <li>Crystal Cavern</li> <li>Twilight</li> <li>Aurora</li> <li>Floating</li> <li>Soft Focus</li> <li>Warm Blanket</li> <li>Spellbound</li> <li>Halo</li> <li>Pulse Pad</li> <li>Breathing Pad</li> <li>Sunrise</li> <li>Night Garden</li> <li>Distant Lights</li> <li>Mist</li> <li>Ember Glow</li> <li>Fairy Dust</li> <li>Velvet Glow</li></ul></div>
+        <div class="patch-row"><h3>Arp<span class="count">22</span></h3><ul><li>Crystal Steps</li> <li>Music Box</li> <li>Starfall</li> <li>Bubble Pop</li> <li>Dewdrop</li> <li>Wand Spark</li> <li>Lantern</li> <li>Ripple</li> <li>Fireflies</li> <li>Spinning Wheel</li> <li>Moon Steps</li> <li>Glitter Arp</li> <li>Silver Thread</li> <li>Clockwork</li> <li>Pixie Pluck</li> <li>Gentle Rain</li> <li>Echo Garden</li> <li>Pulse Runner</li> <li>Mirror Arp</li> <li>Daydream Arp</li> <li>Hypno</li> <li>Sapphire Run</li></ul></div>
+        <div class="patch-row"><h3>Pluck<span class="count">12</span></h3><ul><li>Soft Pluck</li> <li>Digital Pluck</li> <li>Harp Glow</li> <li>Kalimba Dream</li> <li>Velvet Pluck</li> <li>Glass Harp</li> <li>Marimba Haze</li> <li>Star Pluck</li> <li>Felt Pluck</li> <li>Woodland</li> <li>Shimmer Pluck</li> <li>Paper Lantern</li></ul></div>
+        <div class="patch-row"><h3>Keys<span class="count">12</span></h3><ul><li>PWM Keys</li> <li>Velvet Keys</li> <li>Glass Keys</li> <li>Warm Tines</li> <li>Hazy Keys</li> <li>Lo-fi Keys</li> <li>Celeste</li> <li>Soft Organ</li> <li>Midnight Organ</li> <li>Chapel Organ</li> <li>Dream Keys</li> <li>Moon Keys</li></ul></div>
+        <div class="patch-row"><h3>Bell<span class="count">8</span></h3><ul><li>Fairy Bells</li> <li>Glass Bells</li> <li>Temple Bell</li> <li>Crystal Bowl</li> <li>Moon Bell</li> <li>Starbells</li> <li>Tiny Bells</li> <li>Wind Chimes</li></ul></div>
+        <div class="patch-row"><h3>Lead<span class="count">8</span></h3><ul><li>Flute Spirit</li> <li>Ocarina</li> <li>Whistle</li> <li>Glide Lead</li> <li>Singing Saw</li> <li>Lullaby Lead</li> <li>Mellow Sync</li> <li>Soft Square</li></ul></div>
+        <div class="patch-row"><h3>Texture<span class="count">6</span></h3><ul><li>Whispering Wind</li> <li>Magic Swirl</li> <li>Underwater</li> <li>Spell Cast</li> <li>Wishing Well</li> <li>Haunted Music Box</li></ul></div>
+        <div class="patch-row"><h3>Bass<span class="count">4</span></h3><ul><li>Round Bass</li> <li>Velvet Bass</li> <li>Pluck Bass</li> <li>Soft Reese</li></ul></div>
+        <div class="patch-row"><h3>Start fresh<span class="count">1</span></h3><ul><li>Init</li></ul></div>
       </div>
     </div>
   </section>
@@ -251,6 +310,13 @@ footer .wrap { display: grid; gap: 8px; }
         <h2>Always the newest version</h2>
         <p class="lede">From version 1.2, LAPiZ updates itself. When you open it, it quietly checks for a new version, downloads it and installs it in the background while you keep making music. The bar at the bottom tells you when it's done: restart FL Studio and you're on the new version. No installer to run and no admin prompt.</p>
       </div>
+      <figure class="plugin-bar">
+        <div class="bar">
+          <span class="help">Hover over any knob or button to see what it does.</span>
+          <span class="news">Updated to v1.2. Restart FL Studio to use it.</span>
+        </div>
+        <figcaption>The bottom of the LAPiZ window, once an update has been installed.</figcaption>
+      </figure>
       <ul class="update-points">
         <li><b>Safe.</b> Updates only come from LAPiZ's own releases on GitHub, and each download is checked before it's installed. If anything goes wrong, your current version stays as it was.</li>
         <li><b>Your choice.</b> Open the gear menu to turn automatic updates off, or click <b>Check for updates now</b>.</li>
@@ -418,7 +484,11 @@ footer .wrap { display: grid; gap: 8px; }
 
   function show(name) {
     const t = tabs[name];
-    buttons.forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+    buttons.forEach(b => {
+      const on = b.dataset.tab === name;
+      b.setAttribute("aria-selected", String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
     panel.setAttribute("aria-labelledby", "tab-" + name);
     image.src = t.img;
     image.alt = "The " + name.charAt(0).toUpperCase() + name.slice(1) + " tab of LAPiZ";
