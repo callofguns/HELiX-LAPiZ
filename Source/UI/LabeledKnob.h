@@ -43,6 +43,12 @@ public:
         Theme::setModule (slider, module);
         slider.onValueChange = [this] { repaint(); };
 
+        // Screen readers say the plain name, then the synth term (the editor adds the help text).
+        slider.setTitle (title);
+        slider.setDescription (technicalName);
+        // Tab to a knob, then turn it with the arrow keys.
+        slider.setWantsKeyboardFocus (true);
+
         addAndMakeVisible (slider);
         attachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (state, paramID, slider);
     }
@@ -52,6 +58,7 @@ public:
     void setTechnicalText (const juce::String& text)
     {
         technicalText = text;
+        slider.setDescription (text);
         repaint();
     }
 

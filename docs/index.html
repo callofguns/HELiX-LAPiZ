@@ -7,7 +7,7 @@
 <title>LAPiZ by HELiX</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,800&display=swap">
 <style>
 /* Layout: one column of stone-colored bands; the hero pairs the wordmark with a live wavetable you can scan. */
 :root {
@@ -33,14 +33,14 @@
   :root:not([data-theme="dark"]) {
     --stone: #f2f4fa; --stone-deep: #e3e8f5; --vein: #c9d1ea; --calcite: #13215a; --mist: #4a5786;
     --pyrite: #8f6a0c; --ultramarine: #2f4fd6; color-scheme: light;
-    --sound: #066b67; --tone: #5b47d6; --shape: #c33a5c; --motion: #9d6006; --effects: #1e6dce;
+    --sound: #066b67; --tone: #5b47d6; --shape: #b73656; --motion: #935a05; --effects: #1c66c1;
     --plugin-ground: #dfe5ec; --plugin-edge: #c9d2dc; --plugin-ink: #1c2330; --plugin-soft: #4f5a6a; --plugin-news: #066b67;
   }
 }
 :root[data-theme="light"] {
   --stone: #f2f4fa; --stone-deep: #e3e8f5; --vein: #c9d1ea; --calcite: #13215a; --mist: #4a5786;
   --pyrite: #8f6a0c; --ultramarine: #2f4fd6; color-scheme: light;
-  --sound: #066b67; --tone: #5b47d6; --shape: #c33a5c; --motion: #9d6006; --effects: #1e6dce;
+  --sound: #066b67; --tone: #5b47d6; --shape: #b73656; --motion: #935a05; --effects: #1c66c1;
   --plugin-ground: #dfe5ec; --plugin-edge: #c9d2dc; --plugin-ink: #1c2330; --plugin-soft: #4f5a6a; --plugin-news: #066b67;
 }
 
@@ -62,8 +62,8 @@ img { max-width: 100%; }
 a { color: var(--pyrite); }
 a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--pyrite); outline-offset: 3px; }
 h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
-h2 { font-size: clamp(1.6rem, 3.2vw, 2.25rem); font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; }
-h3 { font-size: 1.15rem; font-weight: 800; }
+h2 { font-size: clamp(1.6rem, 3.2vw, 2.25rem); font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
+h3 { font-size: 1.15rem; font-weight: 600; }
 p { margin: 0; max-width: 62ch; }
 section { padding-block: clamp(48px, 8vw, 88px); border-top: 1px solid var(--vein); }
 .lede { color: var(--mist); }
@@ -80,23 +80,23 @@ section { padding-block: clamp(48px, 8vw, 88px); border-top: 1px solid var(--vei
   letter-spacing: -0.045em;
 }
 .wordmark .i { color: var(--pyrite); }
-.tagline { font-size: clamp(1.2rem, 2.2vw, 1.45rem); line-height: 1.4; margin-top: 22px; max-width: 26ch; }
+.tagline { font-size: clamp(1.2rem, 2.2vw, 1.45rem); line-height: 1.4; margin-top: 24px; max-width: 26ch; }
 .facts { color: var(--mist); margin-top: 16px; font-size: 0.98rem; }
 .actions { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin-top: 28px; }
 .button {
   display: inline-block;
   background: var(--pyrite);
   color: var(--stone-deep);
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
-  padding: 12px 22px;
+  padding: 12px 24px;
   border-radius: 999px;
 }
 :root[data-theme="light"] .button { color: #fff; }
 @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .button { color: #fff; } }
-.quiet-link { color: var(--calcite); font-weight: 700; }
+.quiet-link { color: var(--calcite); font-weight: 600; }
 
-.scope { display: grid; gap: 14px; }
+.scope { display: grid; gap: 16px; }
 .scope canvas {
   width: 100%;
   max-width: 100%;
@@ -106,22 +106,22 @@ section { padding-block: clamp(48px, 8vw, 88px); border-top: 1px solid var(--vei
   border: 1px solid var(--vein);
   border-radius: 14px;
 }
-.knob-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; }
-.knob-row label { font-weight: 700; line-height: 1.2; }
+.knob-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; }
+.knob-row label { font-weight: 600; line-height: 1.2; }
 .knob-row label small { display: block; font-weight: 400; font-size: 0.8rem; color: var(--mist); }
 .knob-row output { font-variant-numeric: tabular-nums; color: var(--mist); min-width: 4.5ch; text-align: right; }
-input[type="range"] { width: 100%; accent-color: var(--pyrite); }
+input[type="range"] { width: 100%; height: 32px; margin: 0; accent-color: var(--pyrite); cursor: pointer; }
 .shape-names { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--mist); padding-inline: 2px; }
-.shape-names span.on { color: var(--pyrite); font-weight: 700; }
+.shape-names span.on { color: var(--pyrite); font-weight: 600; }
 
 /* ---- Plain names, laid out like the plugin's knobs and colored by module ---- */
 .modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px; }
-.module { border: 1px solid var(--vein); border-top: 3px solid var(--c); border-radius: 12px; padding: 18px 20px 20px; background: var(--stone-deep); }
+.module { border: 1px solid var(--vein); border-radius: 12px; padding: 20px; background: var(--stone-deep); box-shadow: inset 0 3px 0 var(--c); }
 .module h3 { color: var(--c); font-size: 1.05rem; }
 .module h3 small { display: block; font-family: var(--body); font-weight: 400; font-size: 0.88rem; color: var(--mist); margin-top: 2px; }
-.module dl { display: flex; flex-wrap: wrap; gap: 18px 4px; margin: 18px 0 0; }
+.module dl { display: flex; flex-wrap: wrap; gap: 20px 4px; margin: 16px 0 0; }
 .module dl div { flex: 0 1 96px; display: grid; align-content: start; justify-items: center; text-align: center; gap: 2px; }
-.module dt { font-weight: 700; line-height: 1.25; margin-top: 8px; }
+.module dt { font-weight: 600; line-height: 1.25; margin-top: 8px; }
 .module dd { margin: 0; color: var(--mist); font-size: 0.85rem; line-height: 1.3; }
 /* A knob: a 270-degree track with the value arc in the module color. */
 .knob {
@@ -132,21 +132,22 @@ input[type="range"] { width: 100%; accent-color: var(--pyrite); }
 }
 
 /* ---- Tabs ---- */
-.tabbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.tabbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .tabbar button {
-  font: inherit; font-weight: 700; cursor: pointer;
+  font: inherit; font-weight: 600; cursor: pointer;
   background: transparent; color: var(--calcite);
-  border: 1px solid var(--vein); border-radius: 10px; padding: 8px 18px;
+  border: 1px solid var(--vein); border-radius: 10px; padding: 8px 16px;
 }
 .tabbar button[aria-selected="true"] { background: var(--calcite); color: var(--stone); border-color: var(--calcite); }
 .tab-panel { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 40px); align-items: start; }
-.tab-panel img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--vein); display: block; }
-.tab-panel ul { margin: 14px 0 0; padding-left: 1.1em; color: var(--mist); display: grid; gap: 6px; }
+.tab-panel img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--vein); display: block;
+                 transition: opacity 150ms cubic-bezier(0.23, 1, 0.32, 1); }
+.tab-panel ul { margin: 16px 0 0; padding-left: 1.1em; color: var(--mist); display: grid; gap: 8px; }
 
 /* ---- Presets: one row per category, names running on like a liner note ---- */
 .patches { display: grid; border-top: 1px solid var(--vein); }
 .patch-row { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 8px 24px; padding-block: 16px; border-bottom: 1px solid var(--vein); }
-.patch-row h3 { display: flex; align-items: baseline; gap: 10px; }
+.patch-row h3 { display: flex; align-items: baseline; gap: 8px; }
 .patch-row .count { font-family: var(--body); font-weight: 400; font-size: 0.88rem; color: var(--mist); font-variant-numeric: tabular-nums; }
 .patch-row ul { list-style: none; margin: 0; padding: 0; line-height: 1.75; }
 .patch-row li { display: inline; white-space: nowrap; }
@@ -154,11 +155,11 @@ input[type="range"] { width: 100%; accent-color: var(--pyrite); }
 @media (max-width: 640px) { .patch-row { grid-template-columns: minmax(0, 1fr); } }
 
 /* ---- Install ---- */
-.steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; max-width: 70ch; }
-.steps li { counter-increment: step; display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 14px; align-items: baseline; }
+.steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; max-width: 70ch; }
+.steps li { counter-increment: step; display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 16px; align-items: baseline; }
 .steps li::before {
   content: counter(step);
-  font-family: var(--display); font-weight: 800; font-size: 1.4rem; color: var(--mist);
+  font-family: var(--display); font-weight: 600; font-size: 1.4rem; color: var(--mist);
 }
 .steps b { color: var(--calcite); }
 .note { margin-top: 24px; color: var(--mist); font-size: 0.95rem; }
@@ -166,13 +167,18 @@ input[type="range"] { width: 100%; accent-color: var(--pyrite); }
 /* A replica of the bottom of the LAPiZ window, in the plugin's own colors and font (Inter). */
 .plugin-bar { margin: 0 0 32px; max-width: 900px; }
 .plugin-bar .bar {
-  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 24px;
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 24px;
   background: var(--plugin-ground); border: 1px solid var(--plugin-edge); border-radius: 12px;
-  padding: 14px 20px; font-family: "Inter", var(--body); font-size: 0.95rem; line-height: 1.4;
+  padding: 16px 20px; font-family: "Inter", var(--body); font-size: 0.95rem; line-height: 1.4;
 }
 .plugin-bar .help { color: var(--plugin-ink); }
-.plugin-bar .news { color: var(--plugin-news); font-weight: 700; }
-.plugin-bar figcaption { color: var(--mist); font-size: 0.88rem; margin-top: 10px; }
+.plugin-bar .news { color: var(--plugin-news); font-weight: 600; }
+.plugin-bar figcaption { color: var(--mist); font-size: 0.88rem; margin-top: 12px; }
+/* The Surprise me / favorites demo (made with stageshow from the plugin's own look). */
+.demo-video { margin: 0 0 40px; max-width: 720px; }
+.demo-video video { display: block; width: 100%; height: auto; border-radius: 16px; background: #0a1438; }
+.demo-video figcaption { color: var(--mist); font-size: 0.95rem; margin-top: 12px; }
+
 .update-points { margin: 0; padding-left: 1.1em; display: grid; gap: 12px; max-width: 70ch; color: var(--mist); }
 .update-points b { color: var(--calcite); }
 
@@ -192,12 +198,11 @@ footer .wrap { display: grid; gap: 8px; }
     <div class="hero-grid">
       <div>
         <h1 class="wordmark" aria-label="LAPiZ">LAP<span class="i">i</span>Z</h1>
-        <p class="tagline">A free wavetable synth for FL Studio that tells you what every knob does.</p>
-        <p class="facts">VST3 for Windows. Open source under the AGPLv3. Version 1.4, and it keeps itself up to date.</p>
+        <p class="tagline">A free wavetable synth for FL Studio that tells you what every knob does</p>
+        <p class="facts">VST3 for Windows. Open source under the AGPLv3. Version 1.4.1, and it keeps itself up to date.</p>
         <div class="actions">
           <a class="button" href="https://github.com/callofguns/HELiX-LAPiZ/releases/latest">Download LAPiZ</a>
           <a class="quiet-link" href="#install">How to install</a>
-          <a class="quiet-link" href="https://github.com/callofguns/HELiX-LAPiZ">Source on GitHub</a>
         </div>
       </div>
       <div class="scope">
@@ -276,7 +281,7 @@ footer .wrap { display: grid; gap: 8px; }
         <button role="tab" id="tab-effects" aria-controls="panel" aria-selected="false" data-tab="effects">Effects</button>
       </div>
       <div class="tab-panel" id="panel" role="tabpanel" aria-labelledby="tab-simple">
-        <img id="tab-image" src="images/simple.png" alt="The Simple tab of LAPiZ" width="900" height="644">
+        <img id="tab-image" src="images/simple.png" alt="The Simple tab of LAPiZ" width="900" height="644" loading="lazy">
         <div>
           <h3 id="tab-title">Simple</h3>
           <p id="tab-text" class="lede"></p>
@@ -292,6 +297,13 @@ footer .wrap { display: grid; gap: 8px; }
         <h2>102 sounds to start from</h2>
         <p class="lede">LAPiZ sounds soft and a little magical, and sits in the middle of the mix: mostly pads and arps, plus plucks, keys, bells, gentle leads, textures and round basses. Pick one from the preset bar at the top of the window, change anything you like, then click Save to keep your version. Your presets are saved in Documents\LAPiZ\Presets and show up in every project. Click the star to keep your favorites at the top of the list, or roll the die for <b>Surprise me</b>: a brand-new sound made at random, always a musical one.</p>
       </div>
+      <figure class="demo-video">
+        <video id="surprise-demo" muted loop playsinline preload="none" width="720" height="420"
+               poster="images/surprise-demo.jpg"
+               aria-label="LAPiZ demo: the die makes two surprise sounds, then the preset list opens with Favorites on top and the starred Moonlit Haze comes back.">
+        </video>
+        <figcaption>Roll the die for a surprise, then find your starred sounds at the top of the list</figcaption>
+      </figure>
       <div class="patches">
         <div class="patch-row"><h3>Pad<span class="count">30</span></h3><ul><li>Warm Pad</li> <li>Glass Pad</li> <li>Ultramarine</li> <li>Gold Flecks</li> <li>Moonlit Haze</li> <li>Velvet Air</li> <li>Dream Bloom</li> <li>Starlit Drift</li> <li>Slow Tide</li> <li>Cloud Walk</li> <li>Lullaby</li> <li>Hazy Memory</li> <li>Enchanted Forest</li> <li>Crystal Cavern</li> <li>Twilight</li> <li>Aurora</li> <li>Floating</li> <li>Soft Focus</li> <li>Warm Blanket</li> <li>Spellbound</li> <li>Halo</li> <li>Pulse Pad</li> <li>Breathing Pad</li> <li>Sunrise</li> <li>Night Garden</li> <li>Distant Lights</li> <li>Mist</li> <li>Ember Glow</li> <li>Fairy Dust</li> <li>Velvet Glow</li></ul></div>
         <div class="patch-row"><h3>Arp<span class="count">22</span></h3><ul><li>Crystal Steps</li> <li>Music Box</li> <li>Starfall</li> <li>Bubble Pop</li> <li>Dewdrop</li> <li>Wand Spark</li> <li>Lantern</li> <li>Ripple</li> <li>Fireflies</li> <li>Spinning Wheel</li> <li>Moon Steps</li> <li>Glitter Arp</li> <li>Silver Thread</li> <li>Clockwork</li> <li>Pixie Pluck</li> <li>Gentle Rain</li> <li>Echo Garden</li> <li>Pulse Runner</li> <li>Mirror Arp</li> <li>Daydream Arp</li> <li>Hypno</li> <li>Sapphire Run</li></ul></div>
@@ -317,7 +329,7 @@ footer .wrap { display: grid; gap: 8px; }
           <span class="help">Hover over any knob or button to see what it does.</span>
           <span class="news">Updated to v1.2. Restart FL Studio to use it.</span>
         </div>
-        <figcaption>The bottom of the LAPiZ window, once an update has been installed.</figcaption>
+        <figcaption>The bottom of the LAPiZ window, once an update has been installed</figcaption>
       </figure>
       <ul class="update-points">
         <li><b>Safe.</b> Updates only come from LAPiZ's own releases on GitHub, and each download is checked before it's installed. If anything goes wrong, your current version stays as it was.</li>
@@ -334,7 +346,7 @@ footer .wrap { display: grid; gap: 8px; }
         <p class="lede">LAPiZ runs on 64-bit Windows in FL Studio or any other music software that loads VST3 plugins.</p>
       </div>
       <ol class="steps">
-        <li><p>Download <b>LAPiZ-1.4.0-setup.exe</b> from the <a href="https://github.com/callofguns/HELiX-LAPiZ/releases/latest">latest release on GitHub</a>.</p></li>
+        <li><p>Download <b>LAPiZ-1.4.1-setup.exe</b> from the <a href="https://github.com/callofguns/HELiX-LAPiZ/releases/latest">latest release on GitHub</a>.</p></li>
         <li><p>Run it. Windows may warn that the app is from an unknown publisher, because LAPiZ isn't code-signed yet. Click <b>More info</b>, then <b>Run anyway</b>.</p></li>
         <li><p>In FL Studio, open <b>Options &gt; Manage plugins</b> and click <b>Find installed plugins</b>.</p></li>
         <li><p>Find LAPiZ in the list (made by HELiX) and click its star. It now shows up in the plugin browser and the Channel Rack's + menu.</p></li>
@@ -348,6 +360,7 @@ footer .wrap { display: grid; gap: 8px; }
 <footer>
   <div class="wrap">
     <p>LAPiZ is made by Dhruv under the HELiX name. It is free software: you can use it, study it, change it and share it under the GNU Affero General Public License, version 3.</p>
+    <p><a href="https://github.com/callofguns/HELiX-LAPiZ">Source code on GitHub</a></p>
     <p>Built with JUCE. VST is a registered trademark of Steinberg Media Technologies GmbH.</p>
   </div>
 </footer>
@@ -377,9 +390,14 @@ footer .wrap { display: grid; gap: 8px; }
     return shapes[i](p) * (1 - t) + shapes[i + 1](p) * t;
   }
 
-  function color(name) {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  // Colors are read once and again only when the look changes, not on every frame.
+  let colors = {};
+  function readColors() {
+    const style = getComputedStyle(document.documentElement);
+    for (const name of ["--mist", "--ultramarine", "--pyrite"]) colors[name] = style.getPropertyValue(name).trim();
   }
+  function color(name) { return colors[name]; }
+  readColors();
 
   let position = 0;
 
@@ -431,16 +449,24 @@ footer .wrap { display: grid; gap: 8px; }
     names.forEach((n, i) => n.classList.toggle("on", i === nearest));
   }
 
-  // Until you touch the slider, the wave slowly scans back and forth on its own.
-  let touched = false, start = null;
+  // Until you touch the slider, the wave slowly scans back and forth on its own,
+  // but only while it's on screen.
+  let touched = false, start = null, visible = true, running = false;
   function tick(time) {
-    if (touched) return;
+    if (touched || !visible) { running = false; return; }
     if (start === null) start = time;
     position = 0.5 - 0.5 * Math.cos((time - start) / 4200);
     slider.value = Math.round(position * 100);
     draw();
     requestAnimationFrame(tick);
   }
+  function startScanning() {
+    if (!running && !touched && visible && !reduceMotion) { running = true; requestAnimationFrame(tick); }
+  }
+  new IntersectionObserver(entries => {
+    visible = entries[0].isIntersecting;
+    startScanning();
+  }).observe(canvas);
 
   slider.addEventListener("input", () => {
     touched = true;
@@ -449,9 +475,10 @@ footer .wrap { display: grid; gap: 8px; }
   });
 
   draw();
-  if (!reduceMotion) requestAnimationFrame(tick);
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
-  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  startScanning();
+  const onLookChange = () => { readColors(); draw(); };
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", onLookChange);
+  new MutationObserver(onLookChange).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
   // ---- Tab gallery ----
   const tabs = {
@@ -484,6 +511,34 @@ footer .wrap { display: grid; gap: 8px; }
   const panel = document.getElementById("panel");
   const buttons = document.querySelectorAll(".tabbar button");
 
+  // Switching tabs crossfades the screenshot: it fades out, the next one finishes loading,
+  // then it fades in, so a half-loaded picture never flashes. Opacity only, so it stays
+  // with reduced motion too; a quick second click just takes over.
+  let swapCount = 0;
+  function swapImage(src, alt) {
+    if (image.getAttribute("src") === src) return;
+    const id = ++swapCount;
+    const next = new Image();
+    next.src = src;
+    image.style.opacity = "0";
+    Promise.all([next.decode().catch(() => {}), new Promise(r => setTimeout(r, 150))]).then(() => {
+      if (id !== swapCount) return;
+      image.src = src;
+      image.alt = alt;
+      image.style.opacity = "1";
+    });
+  }
+
+  // The other screenshots load the first time someone reaches for the tabs, not with the page.
+  let preloaded = false;
+  function preload() {
+    if (preloaded) return;
+    preloaded = true;
+    Object.values(tabs).forEach(t => { const i = new Image(); i.src = t.img; });
+  }
+  document.querySelector(".tabbar").addEventListener("pointerenter", preload);
+  document.querySelector(".tabbar").addEventListener("focusin", preload);
+
   function show(name) {
     const t = tabs[name];
     buttons.forEach(b => {
@@ -492,8 +547,7 @@ footer .wrap { display: grid; gap: 8px; }
       b.tabIndex = on ? 0 : -1;
     });
     panel.setAttribute("aria-labelledby", "tab-" + name);
-    image.src = t.img;
-    image.alt = "The " + name.charAt(0).toUpperCase() + name.slice(1) + " tab of LAPiZ";
+    swapImage (t.img, "The " + name.charAt(0).toUpperCase() + name.slice(1) + " tab of LAPiZ");
     title.textContent = name.charAt(0).toUpperCase() + name.slice(1);
     text.textContent = t.text;
     points.replaceChildren(...t.points.map(p => { const li = document.createElement("li"); li.textContent = p; return li; }));
@@ -509,6 +563,24 @@ footer .wrap { display: grid; gap: 8px; }
     });
   });
   show("simple");
+
+  // ---- Surprise me demo ----
+  // The phone version is a closer crop, not the wide one shrunk. It plays only while on
+  // screen, and with reduced motion it doesn't start on its own: the poster tells the story
+  // and the controls are there for anyone who wants to watch.
+  const demo = document.getElementById("surprise-demo");
+  const phone = window.matchMedia("(max-width: 560px)").matches;
+  demo.poster = phone ? "images/surprise-demo-phone.jpg" : "images/surprise-demo.jpg";
+  if (phone) { demo.width = 358; demo.height = 340; }
+  demo.src = phone ? "images/surprise-demo-phone.mp4" : "images/surprise-demo.mp4";
+  if (reduceMotion) {
+    demo.controls = true;
+  } else {
+    new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) demo.play().catch(() => {});
+      else demo.pause();
+    }, { threshold: 0.25 }).observe(demo);
+  }
 })();
 </script>
 </body>

@@ -1,67 +1,11 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "Icons.h"
 #include "Settings.h"
 #include "Theme.h"
 #include "../FactoryPresets.h"
 #include "../PluginProcessor.h"
-
-// A small square button with a drawn icon: a star (filled when it's on) or a die.
-class IconButton : public juce::Button
-{
-public:
-    enum class Icon { star, die };
-
-    IconButton (const juce::String& name, Icon iconToDraw) : juce::Button (name), icon (iconToDraw) {}
-
-    void paintButton (juce::Graphics& g, bool highlighted, bool down) override
-    {
-        const auto& p = Theme::get();
-        const auto r = getLocalBounds().toFloat().reduced (0.5f);
-        const float alpha = isEnabled() ? 1.0f : 0.35f;
-
-        if ((highlighted || down) && isEnabled())
-        {
-            g.setColour (p.well);
-            g.fillRoundedRectangle (r, 6.0f);
-        }
-        g.setColour (p.edge);
-        g.drawRoundedRectangle (r, 6.0f, 1.0f);
-
-        const auto c = r.getCentre();
-        const float size = juce::jmin (r.getWidth(), r.getHeight()) * 0.3f;
-        const auto ink = (highlighted || down ? p.ink : p.soft).withMultipliedAlpha (alpha);
-
-        if (icon == Icon::star)
-        {
-            juce::Path star;
-            star.addStar (c, 5, size * 0.42f, size, 0.0f);
-            if (getToggleState())
-            {
-                g.setColour (p.ink.withMultipliedAlpha (alpha));
-                g.fillPath (star);
-            }
-            else
-            {
-                g.setColour (ink);
-                g.strokePath (star, juce::PathStrokeType (1.5f, juce::PathStrokeType::curved));
-            }
-        }
-        else
-        {
-            // A die showing five.
-            const auto face = juce::Rectangle<float> (size * 1.9f, size * 1.9f).withCentre (c);
-            g.setColour (ink);
-            g.drawRoundedRectangle (face, 3.0f, 1.5f);
-            const float pip = size * 0.3f, offset = face.getWidth() * 0.26f;
-            for (auto [dx, dy] : { std::pair { -1, -1 }, { 1, -1 }, { 0, 0 }, { -1, 1 }, { 1, 1 } })
-                g.fillEllipse (juce::Rectangle<float> (pip, pip).withCentre (c.translated ((float) dx * offset, (float) dy * offset)));
-        }
-    }
-
-private:
-    Icon icon;
-};
 
 // Shows which preset (whole sound) is loaded. Click the name for the full list, use the arrows
 // to step through the built-in presets and your saved ones, star a preset to add it to your
@@ -351,7 +295,8 @@ private:
     LapizAudioProcessor& processor;
     static constexpr int favoriteIdBase = 100000;
 
-    juce::TextButton previous { "<" }, next { ">" }, nameButton, saveButton { "Save" };
+    IconButton previous { "Previous preset", IconButton::Icon::previous }, next { "Next preset", IconButton::Icon::next };
+    juce::TextButton nameButton, saveButton { "Save" };
     IconButton favoriteButton { "Favorite", IconButton::Icon::star }, surpriseButton { "Surprise me", IconButton::Icon::die };
     std::unique_ptr<juce::FileChooser> chooser;
 };

@@ -33,7 +33,8 @@ public:
         g.setColour (p.well);
         g.fillRoundedRectangle (bounds, 6.0f);
 
-        auto area = bounds.reduced (12.0f, 12.0f);
+        // The curve starts below the "key down" / "key up" labels, so the peak never runs into them.
+        auto area = bounds.reduced (12.0f, 12.0f).withTrimmedTop (12.0f);
 
         const float a = width (attack->load());
         const float d = width (decay->load());
@@ -68,8 +69,8 @@ public:
         g.drawVerticalLine ((int) xAt (a + d + s), area.getY(), area.getBottom());
         g.setColour (p.soft);
         g.setFont (Theme::regular (11.0f));
-        g.drawText ("key down", juce::Rectangle<float> (area.getX(), bounds.getY() + 2.0f, 70.0f, 14.0f), juce::Justification::left);
-        g.drawText ("key up", juce::Rectangle<float> (xAt (a + d + s) + 4.0f, bounds.getY() + 2.0f, 60.0f, 14.0f), juce::Justification::left);
+        g.drawText ("key down", juce::Rectangle<float> (area.getX(), bounds.getY() + 5.0f, 70.0f, 14.0f), juce::Justification::left);
+        g.drawText ("key up", juce::Rectangle<float> (xAt (a + d + s) + 4.0f, bounds.getY() + 5.0f, 60.0f, 14.0f), juce::Justification::left);
     }
 
 private:

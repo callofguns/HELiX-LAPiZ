@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Lapiz VERSION 1.4.0 LANGUAGES C CXX)
+project(Lapiz VERSION 1.4.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -51,6 +51,7 @@ target_sources(Lapiz PRIVATE
     Source/UI/KeyframeList.h
     Source/UI/WavetablePicker.h
     Source/UI/PresetBar.h
+    Source/UI/Icons.h
     Source/UI/PianoKeyboard.h
     Source/Lfo.h
     Source/Effects.h
@@ -86,7 +87,7 @@ endif()
 # Apple's SF Pro would be the first choice, but its license doesn't allow building it into a Windows plugin.
 juce_add_binary_data(LapizData SOURCES
     Resources/Fonts/Inter-Regular.ttf
-    Resources/Fonts/Inter-Bold.ttf)
+    Resources/Fonts/Inter-SemiBold.ttf)
 
 # Command-line test: plays notes through the synth and checks the numbers (see Tests/RenderTest.cpp).
 juce_add_console_app(LapizTests PRODUCT_NAME "LapizTests")

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "Icons.h"
 #include "Theme.h"
 
 // Draws JUCE's built-in controls (knobs, buttons, menus) in LAPiZ's style.
@@ -107,42 +108,8 @@ public:
 };
 
 // The gear button that opens the settings menu.
-class SettingsButton : public juce::Button
+class SettingsButton : public IconButton
 {
 public:
-    SettingsButton() : juce::Button ("Settings") {}
-
-    void paintButton (juce::Graphics& g, bool highlighted, bool down) override
-    {
-        const auto& p = Theme::get();
-        const auto r = getLocalBounds().toFloat().reduced (0.5f);
-
-        if (highlighted || down)
-        {
-            g.setColour (p.well);
-            g.fillRoundedRectangle (r, 6.0f);
-        }
-        g.setColour (p.edge);
-        g.drawRoundedRectangle (r, 6.0f, 1.0f);
-
-        // A gear: a disc with eight teeth and a hole in the middle.
-        const auto c = r.getCentre();
-        const float outer = juce::jmin (r.getWidth(), r.getHeight()) * 0.26f;
-
-        juce::Path gear;
-        for (int i = 0; i < 8; ++i)
-        {
-            juce::Path tooth;
-            tooth.addRoundedRectangle (-outer * 0.2f, -outer * 1.35f, outer * 0.4f, outer * 0.6f, 1.0f);
-            gear.addPath (tooth, juce::AffineTransform::rotation ((float) i * juce::MathConstants<float>::twoPi / 8.0f)
-                                                       .translated (c.x, c.y));
-        }
-        gear.addEllipse (c.x - outer, c.y - outer, outer * 2.0f, outer * 2.0f);
-
-        g.setColour (highlighted || down ? p.ink : p.soft);
-        g.fillPath (gear);
-
-        g.setColour (highlighted || down ? p.well : p.ground);
-        g.fillEllipse (juce::Rectangle<float> (outer * 0.9f, outer * 0.9f).withCentre (c));
-    }
+    SettingsButton() : IconButton ("Settings", IconButton::Icon::gear) {}
 };
